@@ -18,12 +18,12 @@ A Rust implementation of the [LightDock](https://lightdock.org) macromolecular s
  
 ## Examples
 
-Several examples can be found in the `examples` folder.
+Several examples can be found in the `example` folder.
 
 ### 1k4c
 
 ```
-cd examples/1k4c
+cd example/1k4c
 time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
 
 ...
@@ -36,7 +36,7 @@ sys     0m1.595s
 ### 1ppe
 
 ```
-cd examples/1ppe
+cd example/1ppe
 time ../../target/release/lightdock-rust setup_1ppe.json initial_positions_0.dat 100
 
 ...
@@ -49,7 +49,7 @@ sys     0m0.484s
 ### 2uuy
 
 ```
-cd examples/2uuy
+cd example/2uuy
 time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
 
 ...
