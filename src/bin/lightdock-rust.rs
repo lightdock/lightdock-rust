@@ -149,16 +149,20 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32) {
     let mut lig_nm: Vec<f64> = Vec::new();
     if setup.use_anm {
         let mut buf = vec![];
-        std::fs::File::open(DEFAULT_REC_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
-        rec_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-        if rec_nm.len() != receptor.get_atom_number() as usize * 3 * setup.anm_rec {
-            panic!("Number of read ANM in receptor does not correspond to the number of atoms");
+        if setup.anm_rec > 0 {
+            std::fs::File::open(DEFAULT_REC_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
+            rec_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
+            if rec_nm.len() != receptor.get_atom_number() as usize * 3 * setup.anm_rec {
+                panic!("Number of read ANM in receptor does not correspond to the number of atoms");
+            }
         }
-        buf = vec![];
-        std::fs::File::open(DEFAULT_LIG_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
-        lig_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-        if lig_nm.len() != ligand.get_atom_number() as usize * 3 * setup.anm_lig {
-            panic!("Number of read ANM in ligand does not correspond to the number of atoms");
+        if setup.anm_lig > 0 {
+            buf = vec![];
+            std::fs::File::open(DEFAULT_LIG_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
+            lig_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
+            if lig_nm.len() != ligand.get_atom_number() as usize * 3 * setup.anm_lig {
+                panic!("Number of read ANM in ligand does not correspond to the number of atoms");
+            }
         }
     }
 
