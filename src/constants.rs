@@ -17,7 +17,7 @@ pub const INTERFACE_CUTOFF: f64 = 3.9;
 pub const DEFAULT_LIGHTDOCK_PREFIX: &str = "lightdock_";
 
 // Membrane penalty for biasing the scoring
-pub const MEMBRANE_PENALTY_DFIRE: f64 = 999.0;
+pub const MEMBRANE_PENALTY_SCORE: f64 = 999.0;
 
 // ANM interpolation step
 pub const DEFAULT_NMODES_STEP: f64 = 0.5;

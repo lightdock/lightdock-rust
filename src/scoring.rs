@@ -1,6 +1,8 @@
 use lib3dmol::structures::Structure;
 use std::collections::HashMap;
 use super::constants::INTERFACE_CUTOFF;
+use std::fs::File;
+use std::io::Read;
 
 
 macro_rules! hashmap {
@@ -197,28 +199,43 @@ impl DockingModel {
 
 
 #[derive(Debug)]
-pub struct DFIRE {
+pub struct Score {
     pub energy: Vec<f64>,
+    pub method: Method,
 }
-
-impl Default for DFIRE {
+/*
+impl Default for Score {
     fn default() -> Self {
-        DFIRE::new()
+        Score::new(Method)
     }
 }
+*/
+#[derive(Debug)]
+pub enum Method {
+    DFire,
+    DLigand2,
+}
 
-
-impl DFIRE {
-    pub fn new() -> DFIRE {
-        let mut d = DFIRE {
-            energy: Vec::with_capacity(168 * 168 * 20)
+impl Score {
+    pub fn new(method: Method) -> Score {
+        let mut d = Score {
+            energy: Vec::with_capacity(168 * 168 * 20),
+            method: method,
         };
-        d.load_potentials();
+        d.load_potentials(); 
         d
     }
 
     fn load_potentials(&mut self) {
-        let raw_parameters = include_str!("DCparams").to_string();
+        let mut raw_parameters = String::new();
+        let mut dfire_params = File::open("DCparams").expect("Unable to open the file");
+        let mut dligand2_params = File::open("DLparams").expect("Unable to open the file");
+
+        match &self.method {
+            Method::DFire => dfire_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
+            Method::DLigand2 => dligand2_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
+        };
+
         let split = raw_parameters.lines();
         let params: Vec<&str> = split.collect();
 
@@ -227,7 +244,7 @@ impl DFIRE {
         }
     }
 
-    pub fn get_potential(&mut self, x: usize, y: usize, z: usize) -> f64{
+    pub fn get_potential(&mut self, x: usize, y: usize, z: usize) -> f64 {
         self.energy[x + 168 * (y + 20 * z)]
     }
 
@@ -264,14 +281,13 @@ impl DFIRE {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_read_potentials() {
-        let scoring = DFIRE::new();
+        let scoring = Score::new(Method::DFire);
         assert_eq!(scoring.energy[0], 10.0);
         assert_eq!(scoring.energy[2], -0.624030868);
         assert_eq!(scoring.energy[4998], -0.0458685914);

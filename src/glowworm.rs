@@ -1,8 +1,8 @@
 use std::f64;
 use std::collections::HashMap;
-use super::dfire::{DFIRE, DockingModel};
+use super::scoring::{Score, DockingModel};
 use super::qt::Quaternion;
-use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP, MEMBRANE_PENALTY_DFIRE};
+use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP, MEMBRANE_PENALTY_SCORE};
 
 
 #[derive(Debug)]
@@ -12,7 +12,7 @@ pub struct Glowworm<'a> {
     pub rotation: Quaternion,
     pub rec_nmodes: Vec<f64>,
     pub lig_nmodes: Vec<f64>,
-    pub scoring_function: &'a DFIRE,
+    pub scoring_function: &'a Score,
     pub receptor: &'a DockingModel,
     pub ligand: &'a DockingModel,
     pub rho: f64,
@@ -32,7 +32,7 @@ pub struct Glowworm<'a> {
 
 impl<'a> Glowworm<'a> {
      pub fn new(id: u32, translation:Vec<f64>, rotation:Quaternion, 
-        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a DFIRE,
+        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a Score,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
         Glowworm {
             id,
@@ -112,7 +112,7 @@ impl<'a> Glowworm<'a> {
             let mut membrane_penalty: f64 = 0.0;
             let intersection = membrane_intersection(&interface_receptor, &self.receptor.membrane);
             if intersection > 0.0 {
-                membrane_penalty = MEMBRANE_PENALTY_DFIRE * intersection;
+                membrane_penalty = MEMBRANE_PENALTY_SCORE * intersection;
             }
             
             self.scoring = energy + perc_receptor_restraints * energy 

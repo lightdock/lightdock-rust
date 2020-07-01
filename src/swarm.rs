@@ -1,6 +1,6 @@
 use super::glowworm::Glowworm;
 use super::glowworm::distance;
-use super::dfire::{DFIRE, DockingModel};
+use super::scoring::{Score, DockingModel};
 use super::qt::Quaternion;
 use rand::Rng;
 use std::fs::File;
@@ -25,7 +25,7 @@ impl<'a> Swarm<'a> {
     	}
     }
 
-    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a DFIRE,
+    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a Score,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) {
     	for i in 0..positions.len() {
             // Translation component
