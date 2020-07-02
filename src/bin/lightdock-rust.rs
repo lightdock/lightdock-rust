@@ -149,7 +149,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
     let ligand = parser::read_pdb(&ligand_filename, "ligand");
 
     // Scoring function
-    println!("Loading DFIRE scoring function");
+    println!("Loading {:?} scoring function", method);
     let scoring = Score::new(method);
 
     // Read ANM data if activated
