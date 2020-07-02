@@ -108,6 +108,7 @@ fn run() {
             let method = match &method_type[..] {
                 "dfire" => Ok(Method::DFIRE),
                 "dligand2" => Ok(Method::DLIGAND2),
+                "ddna" => Ok(Method::DDNA),
                 _ => Err(())
             };
 
