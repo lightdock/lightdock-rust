@@ -118,7 +118,7 @@ fn run() {
             simulate(&setup, swarm_filename, steps, method.unwrap());
         }
         _ => {
-            println!("Wrong command line. Usage: {} setup_filename swarm_filename steps", args[0]);
+            println!("Wrong command line. Usage: {} setup_filename swarm_filename steps method", args[0]);
         }
     }
 }

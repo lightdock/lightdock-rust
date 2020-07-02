@@ -24,7 +24,8 @@ Several examples can be found in the `example` folder.
 
 ```
 cd example/1k4c
-time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
+cp -R ../../data .
+time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 dfire
 
 ...
 
@@ -37,7 +38,8 @@ sys     0m1.595s
 
 ```
 cd example/1ppe
-time ../../target/release/lightdock-rust setup_1ppe.json initial_positions_0.dat 100
+cp -R ../../data .
+time ../../target/release/lightdock-rust setup_1ppe.json initial_positions_0.dat 100 dfire
 
 ...
 
@@ -50,7 +52,8 @@ sys     0m0.484s
 
 ```
 cd example/2uuy
-time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
+cp -R ../../data .
+time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 dfire
 
 ...
 
@@ -59,4 +62,17 @@ user    0m19.692s
 sys     0m1.070s
 ```
 
+### 1czy
+
+```
+cd example/1czy
+cp -R ../../data .
+time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
+
+...
+
+real    0m20.868s
+user    0m19.692s
+sys     0m1.070s
+```
 
