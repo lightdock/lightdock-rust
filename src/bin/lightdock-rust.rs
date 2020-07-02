@@ -4,7 +4,7 @@ extern crate npy;
 
 use lightdock::GSO;
 use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_NM_FILE, DEFAULT_LIG_NM_FILE};
-use lightdock::dfire::DFIRE;
+use lightdock::scoring::{Score, Method};
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -89,7 +89,7 @@ fn run() {
     // Parse command line
     let args: Vec<String> = env::args().collect();
     match args.len() {
-        4 => {
+        5 => {
             let setup_filename = &args[1];
             let swarm_filename = &args[2];
             let num_steps = &args[3];
@@ -103,11 +103,19 @@ fn run() {
                     return;
                 },
             };
+            let method_type = &args[4].to_lowercase().to_owned();
+            // parse the type
+            let method = match &method_type[..] {
+                "dfire" => Ok(Method::DFIRE),
+                "dligand2" => Ok(Method::DLIGAND2),
+                "ddna" => Ok(Method::DDNA),
+                _ => Err(())
+            };
 
             // Load setup
             let setup = read_setup_from_file(setup_filename).unwrap();
 
-            simulate(&setup, swarm_filename, steps);
+            simulate(&setup, swarm_filename, steps, method.unwrap());
         }
         _ => {
             println!("Wrong command line. Usage: {} setup_filename swarm_filename steps", args[0]);
@@ -116,7 +124,7 @@ fn run() {
 }
 
 
-fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32) {
+fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method) {
 
     let seed:u64 = match setup.seed {
         Some(seed) => {
@@ -141,8 +149,8 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32) {
     let ligand = parser::read_pdb(&ligand_filename, "ligand");
 
     // Scoring function
-    println!("Loading DFIRE scoring function");
-    let scoring = DFIRE::new();
+    println!("Loading {:?} scoring function", method);
+    let scoring = Score::new(method);
 
     // Read ANM data if activated
     let mut rec_nm: Vec<f64> = Vec::new();
@@ -175,7 +183,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32) {
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let receptor_model = DFIRE::get_docking_model(&receptor, 
+    let receptor_model = Score::get_docking_model(&receptor, 
         &rec_active_restraints, &rec_passive_restraints, &rec_nm, setup.anm_rec);
 
     // Ligand model
@@ -187,7 +195,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32) {
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let ligand_model = DFIRE::get_docking_model(&ligand, 
+    let ligand_model = Score::get_docking_model(&ligand, 
         &lig_active_restraints, &lig_passive_restraints, &lig_nm, setup.anm_lig);
 
     // Glowworm Swarm Optimization algorithm

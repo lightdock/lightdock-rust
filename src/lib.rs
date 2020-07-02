@@ -6,12 +6,12 @@ pub mod glowworm;
 pub mod swarm;
 pub mod qt;
 pub mod constants;
-pub mod dfire;
+pub mod scoring;
 
 use swarm::Swarm;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use dfire::{DFIRE, DockingModel};
+use scoring::{Score, DockingModel};
 
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ pub struct GSO<'a> {
 
 
 impl<'a> GSO<'a> {
-    pub fn new(positions: &Vec<Vec<f64>>, seed: u64, scoring: &'a DFIRE, 
+    pub fn new(positions: &Vec<Vec<f64>>, seed: u64, scoring: &'a Score, 
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
         let mut gso = GSO {
             swarm: Swarm::new(),
