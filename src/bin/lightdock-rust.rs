@@ -106,8 +106,8 @@ fn run() {
             let method_type = &args[4].to_lowercase().to_owned();
             // parse the type
             let method = match &method_type[..] {
-                "dfire" => Ok(Method::DFire),
-                "dligand2" => Ok(Method::DLigand2),
+                "dfire" => Ok(Method::DFIRE),
+                "dligand2" => Ok(Method::DLIGAND2),
                 _ => Err(())
             };
 

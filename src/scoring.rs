@@ -4,7 +4,6 @@ use super::constants::INTERFACE_CUTOFF;
 use std::fs::File;
 use std::io::Read;
 
-
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = ::std::collections::HashMap::new();
@@ -212,8 +211,8 @@ impl Default for Score {
 */
 #[derive(Debug)]
 pub enum Method {
-    DFire,
-    DLigand2,
+    DFIRE,
+    DLIGAND2,
 }
 
 impl Score {
@@ -228,12 +227,12 @@ impl Score {
 
     fn load_potentials(&mut self) {
         let mut raw_parameters = String::new();
-        let mut dfire_params = File::open("DCparams").expect("Unable to open the file");
-        let mut dligand2_params = File::open("DLparams").expect("Unable to open the file");
+        let mut dfire_params = File::open("src/DCparams").expect("Unable to open the file");
+        let mut dligand2_params = File::open("src/DLparams").expect("Unable to open the file");
 
         match &self.method {
-            Method::DFire => dfire_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
-            Method::DLigand2 => dligand2_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
+            Method::DFIRE => dfire_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
+            Method::DLIGAND2 => dligand2_params.read_to_string(&mut raw_parameters).expect("Unable to read file"),
         };
 
         let split = raw_parameters.lines();
@@ -287,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_read_potentials() {
-        let scoring = Score::new(Method::DFire);
+        let scoring = Score::new(Method::DFIRE);
         assert_eq!(scoring.energy[0], 10.0);
         assert_eq!(scoring.energy[2], -0.624030868);
         assert_eq!(scoring.energy[4998], -0.0458685914);
