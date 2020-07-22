@@ -67,7 +67,7 @@ sys     0m1.070s
 ```
 cd example/1czy
 cp -R ../../data .
-time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100
+time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 dfire
 
 ...
 
