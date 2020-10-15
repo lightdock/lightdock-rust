@@ -20,6 +20,10 @@ A Rust implementation of the [LightDock](https://lightdock.org) macromolecular s
 
 Several examples can be found in the `example` folder.
 
+| :information_source: Data Path          |
+|:---------------------------|
+| You may set an environment variable `LIGHTDOCK_DATA` to point to the data folder included in this repository to avoid copying it: `export LIGHTDOCK_DATA=/path/to/lightdock-rust/data`  |
+
 ### 1k4c
 
 ```
