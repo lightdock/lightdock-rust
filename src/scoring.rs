@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use super::constants::INTERFACE_CUTOFF;
 use std::fs::File;
 use std::io::Read;
+use std::env;
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
@@ -202,13 +203,7 @@ pub struct Score {
     pub energy: Vec<f64>,
     pub method: Method,
 }
-/*
-impl Default for Score {
-    fn default() -> Self {
-        Score::new(Method)
-    }
-}
-*/
+
 #[derive(Debug)]
 pub enum Method {
     DFIRE,
@@ -227,8 +222,15 @@ impl Score {
     fn load_potentials(&mut self) {
         let mut raw_parameters = String::new();
 
+        let data_folder = match env::var("LIGHTDOCK_DATA") {
+            Ok(val) => val,
+            Err(_) => String::from("data"),
+        };
+
+        let parameters_path: String = format!("{}/DCparams", data_folder);
+
         match &self.method {
-            Method::DFIRE => File::open("data/DCparams").expect("Unable to open DFIRE parameters")
+            Method::DFIRE => File::open(parameters_path).expect("Unable to open DFIRE parameters")
             .read_to_string(&mut raw_parameters).expect("Unable to read DFIRE parameters"),
         };
 
