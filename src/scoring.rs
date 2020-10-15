@@ -212,8 +212,6 @@ impl Default for Score {
 #[derive(Debug)]
 pub enum Method {
     DFIRE,
-    DLIGAND2,
-    DDNA,
 }
 
 impl Score {
@@ -230,12 +228,8 @@ impl Score {
         let mut raw_parameters = String::new();
 
         match &self.method {
-            Method::DFIRE => File::open("data/DCparams").expect("Unable to open the file")
-            .read_to_string(&mut raw_parameters).expect("Unable to read file"),
-            Method::DLIGAND2 => File::open("data/DLparams").expect("Unable to open the file")
-            .read_to_string(&mut raw_parameters).expect("Unable to read file"),
-            Method::DDNA => File::open("data/DDNA").expect("Unable to open the file")
-            .read_to_string(&mut raw_parameters).expect("Unable to read file"),
+            Method::DFIRE => File::open("data/DCparams").expect("Unable to open DFIRE parameters")
+            .read_to_string(&mut raw_parameters).expect("Unable to read DFIRE parameters"),
         };
 
         let split = raw_parameters.lines();

@@ -106,16 +106,17 @@ fn run() {
             let method_type = &args[4].to_lowercase().to_owned();
             // parse the type
             let method = match &method_type[..] {
-                "dfire" => Ok(Method::DFIRE),
-                "dligand2" => Ok(Method::DLIGAND2),
-                "ddna" => Ok(Method::DDNA),
-                _ => Err(())
+                "dfire" => Method::DFIRE,
+                _ => {
+                    eprintln!("Error: method not supported");
+                    return;
+                },
             };
 
             // Load setup
             let setup = read_setup_from_file(setup_filename).unwrap();
 
-            simulate(&setup, swarm_filename, steps, method.unwrap());
+            simulate(&setup, swarm_filename, steps, method);
         }
         _ => {
             println!("Wrong command line. Usage: {} setup_filename swarm_filename steps method", args[0]);
