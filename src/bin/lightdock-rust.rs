@@ -33,6 +33,7 @@ struct SetupFile {
     starting_points_seed: u32, 
     verbose_parser: bool, 
     noxt: bool, 
+    now: bool,
     restraints: Option<String>, 
     use_anm: bool, 
     glowworms: u32, 

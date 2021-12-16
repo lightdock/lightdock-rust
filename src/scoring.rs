@@ -150,7 +150,10 @@ impl DockingModel {
         let mut atom_index: u64 = 0;
         for chain in structure.chains.iter() {
             for residue in chain.lst_res.iter() {
-                let res_id = format!("{}.{}.{}", chain.name, residue.name.trim(), residue.res_num);
+                let mut res_id = format!("{}.{}.{}", chain.name, residue.name.trim(), residue.res_num);
+                if let Some(c) = residue.res_icode {
+                    res_id.push(c);
+                }
 
                 for atom in residue.lst_atom.iter() {
                     // Membrane beads MMB.BJ
