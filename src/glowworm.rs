@@ -5,14 +5,13 @@ use super::qt::Quaternion;
 use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP, MEMBRANE_PENALTY_SCORE};
 
 
-#[derive(Debug)]
 pub struct Glowworm<'a> {
     pub id: u32,
     pub translation: Vec<f64>,
     pub rotation: Quaternion,
     pub rec_nmodes: Vec<f64>,
     pub lig_nmodes: Vec<f64>,
-    pub scoring_function: &'a Score,
+    pub scoring_function: &'a dyn Score,
     pub receptor: &'a DockingModel,
     pub ligand: &'a DockingModel,
     pub rho: f64,
@@ -32,7 +31,7 @@ pub struct Glowworm<'a> {
 
 impl<'a> Glowworm<'a> {
      pub fn new(id: u32, translation:Vec<f64>, rotation:Quaternion, 
-        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a Score,
+        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a dyn Score,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
         Glowworm {
             id,
@@ -77,7 +76,7 @@ impl<'a> Glowworm<'a> {
                 if self.use_anm && self.ligand.num_anm > 0 {
                     for i_nm in 0usize..self.ligand.num_anm {
                         // (num_anm, num_atoms, 3) -> 1d
-                        // Endiannes: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
+                        // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
                         coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3] * self.lig_nmodes[i_nm];
                         coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1] * self.lig_nmodes[i_nm];
                         coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2] * self.lig_nmodes[i_nm];
@@ -90,7 +89,7 @@ impl<'a> Glowworm<'a> {
                 if self.use_anm && self.receptor.num_anm > 0 {
                     for i_nm in 0usize..self.receptor.num_anm {
                         // (num_anm, num_atoms, 3) -> 1d
-                        // Endiannes: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
+                        // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
                         coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3] * self.rec_nmodes[i_nm];
                         coordinate[1] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 1] * self.rec_nmodes[i_nm];
                         coordinate[2] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 2] * self.rec_nmodes[i_nm];
@@ -114,7 +113,7 @@ impl<'a> Glowworm<'a> {
             if intersection > 0.0 {
                 membrane_penalty = MEMBRANE_PENALTY_SCORE * intersection;
             }
-            
+
             self.scoring = energy + perc_receptor_restraints * energy 
                 + perc_ligand_restraints * energy - membrane_penalty;
         }

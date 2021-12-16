@@ -7,7 +7,6 @@ use std::fs::File;
 use std::io::{Write, Error};
 
 
-#[derive(Debug)]
 pub struct Swarm<'a> {
 	pub glowworms: Vec<Glowworm<'a>>,
 }
@@ -25,7 +24,7 @@ impl<'a> Swarm<'a> {
     	}
     }
 
-    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a Score,
+    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a dyn Score,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) {
     	for i in 0..positions.len() {
             // Translation component

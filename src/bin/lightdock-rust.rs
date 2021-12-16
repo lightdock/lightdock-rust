@@ -5,6 +5,7 @@ extern crate npy;
 use lightdock::GSO;
 use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_NM_FILE, DEFAULT_LIG_NM_FILE};
 use lightdock::scoring::{Score, Method};
+use lightdock::dfire::DFIRE;
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -152,7 +153,9 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
 
     // Scoring function
     println!("Loading {:?} scoring function", method);
-    let scoring = Score::new(method);
+    let scoring = match method {
+        Method::DFIRE => DFIRE::new(),
+    };
 
     // Read ANM data if activated
     let mut rec_nm: Vec<f64> = Vec::new();
@@ -185,7 +188,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let receptor_model = Score::get_docking_model(&receptor, 
+    let receptor_model = scoring.get_docking_model(&receptor,
         &rec_active_restraints, &rec_passive_restraints, &rec_nm, setup.anm_rec);
 
     // Ligand model
@@ -197,7 +200,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let ligand_model = Score::get_docking_model(&ligand, 
+    let ligand_model = scoring.get_docking_model(&ligand,
         &lig_active_restraints, &lig_passive_restraints, &lig_nm, setup.anm_lig);
 
     // Glowworm Swarm Optimization algorithm
