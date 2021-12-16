@@ -1,8 +1,8 @@
 [package]
 name = "lightdock"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Brian Jimenez Garcia <br.jimenezgarcia@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 rand = "0.7.3"

@@ -33,9 +33,9 @@ time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 
 
 ...
 
-real    4m27.412s
-user    4m21.112s
-sys     0m1.595s
+real    3m53.851s
+user    3m52.550s
+sys     0m0.717s
 ```
 
 ### 1ppe
@@ -43,7 +43,7 @@ sys     0m1.595s
 ```
 cd example/1ppe
 cp -R ../../data .
-time ../../target/release/lightdock-rust setup_1ppe.json initial_positions_0.dat 100 dfire
+time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 dfire
 
 ...
 
@@ -61,9 +61,9 @@ time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 
 
 ...
 
-real    0m20.868s
-user    0m19.692s
-sys     0m1.070s
+real    0m18.042s
+user    0m17.123s
+sys     0m0.621s
 ```
 
 ### 1czy
