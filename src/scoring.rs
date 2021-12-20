@@ -28,7 +28,6 @@ pub fn atoms_in_residues(residue_name: &str) -> &'static [&'static str] {
     }
 }
 
-#[derive(Debug)]
 pub struct DockingModel {
     pub atoms: Vec<usize>,
     pub coordinates: Vec<[f64; 3]>,
@@ -38,12 +37,6 @@ pub struct DockingModel {
     pub nmodes: Vec<f64>,
     pub num_anm: usize,
 }
-
-// #[derive(Debug)]
-// pub struct Score {
-//     pub energy: Vec<f64>,
-//     pub method: Method,
-// }
 
 #[derive(Debug)]
 pub enum Method {
