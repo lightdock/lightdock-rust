@@ -24,7 +24,7 @@ impl<'a> Swarm<'a> {
     	}
     }
 
-    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a dyn Score,
+    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a Box<dyn Score>,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) {
     	for i in 0..positions.len() {
             // Translation component

@@ -11,7 +11,7 @@ pub struct Glowworm<'a> {
     pub rotation: Quaternion,
     pub rec_nmodes: Vec<f64>,
     pub lig_nmodes: Vec<f64>,
-    pub scoring_function: &'a dyn Score,
+    pub scoring_function: &'a Box<dyn Score>,
     pub receptor: &'a DockingModel,
     pub ligand: &'a DockingModel,
     pub rho: f64,
@@ -31,7 +31,7 @@ pub struct Glowworm<'a> {
 
 impl<'a> Glowworm<'a> {
      pub fn new(id: u32, translation:Vec<f64>, rotation:Quaternion, 
-        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a dyn Score,
+        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a Box<dyn Score>,
         receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
         Glowworm {
             id,

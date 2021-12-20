@@ -1,4 +1,5 @@
 use lib3dmol::structures::Structure;
+use lib3dmol::parser;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -96,9 +97,15 @@ lazy_static! {
 }
 
 
-impl DockingModel {
-    pub fn new(structure: &Structure, active_restraints: &[String], passive_restraints: &[String],
-        nmodes: &Vec<f64>, num_anm: usize) -> Self {
+pub struct DFIRE {
+	pub potential: Vec<f64>,
+}
+
+impl Score for DFIRE {
+
+    fn get_docking_model(&self, structure: &Structure,
+        active_restraints: &[String], passive_restraints: &[String],
+        nmodes: &Vec<f64>, num_anm: usize) -> DockingModel {
         let mut model = DockingModel {
             atoms: Vec::new(),
             coordinates: Vec::new(),
@@ -160,20 +167,6 @@ impl DockingModel {
         }
         model
     }
-}
-
-
-pub struct DFIRE {
-	pub energy: Vec<f64>,
-}
-
-impl Score for DFIRE {
-
-    fn get_docking_model(&self, structure: &Structure,
-        active_restraints: &[String], passive_restraints: &[String],
-        nmodes: &Vec<f64>, num_anm: usize) -> DockingModel {
-        DockingModel::new(&structure, &active_restraints, &passive_restraints, &nmodes, num_anm)
-    }
 
     fn energy(&self, receptor: &DockingModel, ligand: &DockingModel,
         receptor_coordinates: &[[f64; 3]], ligand_coordinates: &[[f64; 3]],
@@ -190,7 +183,7 @@ impl Score for DFIRE {
                     let atomb = ligand.atoms[j];
                     let d = dist.sqrt()*2.0 - 1.0;
                     let dfire_bin = DIST_TO_BINS[d as usize] - 1;
-                    score += self.energy[atoma*168*20 + atomb*20 + dfire_bin];
+                    score += self.potential[atoma*168*20 + atomb*20 + dfire_bin];
                     if d <= INTERFACE_CUTOFF {
                         interface_receptor[i] = 1;
                         interface_ligand[j] = 1;
@@ -203,12 +196,12 @@ impl Score for DFIRE {
 }
 
 impl DFIRE {
-	pub fn new() -> Self {
+	pub fn new() -> Box<dyn Score> {
 	    let mut d = DFIRE {
-	        energy: Vec::with_capacity(168 * 168 * 20),
+	        potential: Vec::with_capacity(168 * 168 * 20),
 	    };
 	    d.load_potentials();
-	    d
+	    Box::new(d)
 	}
 
 	pub fn load_potentials(&mut self) {
@@ -228,12 +221,12 @@ impl DFIRE {
 	    let params: Vec<&str> = split.collect();
 
 	    for count in 0..168*168*20 {
-	        self.energy.push(params[count].trim().parse::<f64>().unwrap());
+	        self.potential.push(params[count].trim().parse::<f64>().unwrap());
 	    }
 	}
 
 	pub fn get_potential(&mut self, x: usize, y: usize, z: usize) -> f64 {
-	    self.energy[x + 168 * (y + 20 * z)]
+	    self.potential[x + 168 * (y + 20 * z)]
 	}
 }
 
@@ -243,10 +236,40 @@ mod tests {
 
     #[test]
     fn test_read_potentials() {
+        let mut scoring = DFIRE {
+            potential: Vec::with_capacity(168 * 168 * 20),
+        };
+        scoring.load_potentials();
+        assert_eq!(scoring.potential[0], 10.0);
+        assert_eq!(scoring.potential[2], -0.624030868);
+        assert_eq!(scoring.potential[4998], -0.0458685914);
+        assert_eq!(scoring.potential[168*168*20-1], 0.0);
+    }
+
+    #[test]
+    fn test_2oob() {
+        let cargo_path = match env::var("CARGO_MANIFEST_DIR") {
+            Ok(val) => val,
+            Err(_) => String::from("."),
+        };
+        let test_path: String = format!("{}/tests/2oob", cargo_path);
+
         let scoring = DFIRE::new();
-        assert_eq!(scoring.energy[0], 10.0);
-        assert_eq!(scoring.energy[2], -0.624030868);
-        assert_eq!(scoring.energy[4998], -0.0458685914);
-        assert_eq!(scoring.energy[168*168*20-1], 0.0);
+
+        let receptor_filename: String = format!("{}/2oob_receptor.pdb", test_path);
+        let receptor = parser::read_pdb(&receptor_filename, "receptor");
+        let receptor_model = scoring.get_docking_model(&receptor, &Vec::new(), &Vec::new(), &Vec::new(), 0);
+
+        let ligand_filename: String = format!("{}/2oob_ligand.pdb", test_path);
+        let ligand = parser::read_pdb(&ligand_filename, "ligand");
+        let ligand_model = scoring.get_docking_model(&ligand, &Vec::new(), &Vec::new(), &Vec::new(), 0);
+
+        let mut receptor_coordinates: Vec<[f64; 3]> = receptor_model.coordinates.clone();
+        let mut ligand_coordinates: Vec<[f64; 3]> = ligand_model.coordinates.clone();
+        let mut interface_receptor: Vec<usize> = vec![0; receptor_coordinates.len()];
+        let mut interface_ligand: Vec<usize> = vec![0; ligand_coordinates.len()];
+        let energy = scoring.energy(&receptor_model, &ligand_model, &receptor_coordinates, &ligand_coordinates,
+                                    &mut interface_receptor, &mut interface_ligand);
+        assert_eq!(energy, 16.7540569503498);
     }
 }

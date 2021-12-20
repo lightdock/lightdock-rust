@@ -47,9 +47,9 @@ time ../../target/release/lightdock-rust setup.json initial_positions_0.dat 100 
 
 ...
 
-real    0m11.923s
-user    0m11.151s
-sys     0m0.484s
+real    0m9.968s
+user    0m9.640s
+sys     0m0.271s
 ```
 
 ### 2uuy
