@@ -1,28 +1,41 @@
 use std::collections::HashMap;
-use lib3dmol::structures::Structure;
+use super::qt::Quaternion;
 
-pub struct DockingModel {
-    pub atoms: Vec<usize>,
-    pub coordinates: Vec<[f64; 3]>,
-    pub membrane: Vec<usize>,
-    pub active_restraints: HashMap<String, Vec<usize>>,
-    pub passive_restraints: HashMap<String, Vec<usize>>,
-    pub nmodes: Vec<f64>,
-    pub num_anm: usize,
-}
 
 #[derive(Debug)]
 pub enum Method {
     DFIRE,
-    DNA,
 }
 
 pub trait Score {
-    fn energy(&self, receptor: &DockingModel, ligand: &DockingModel,
-        receptor_coordinates: &[[f64; 3]], ligand_coordinates: &[[f64; 3]],
-        interface_receptor: &mut Vec<usize>, interface_ligand: &mut Vec<usize>) -> f64;
+    fn energy(&self, translation: &Vec<f64>, rotation: &Quaternion,
+        rec_nmodes: &Vec<f64>, lig_nmodes: &Vec<f64>) -> f64;
+}
 
-    fn get_docking_model(&self, structure: &Structure,
-        active_restraints: &[String], passive_restraints: &[String],
-        nmodes: &Vec<f64>, num_anm: usize) -> DockingModel;
+pub fn satisfied_restraints(interface: &[usize], restraints: &HashMap<String, Vec<usize>>) -> f64 {
+    // Calculate the percentage of satisfied restraints
+    if restraints.is_empty() {
+        return 0.0
+    }
+    let mut num_residues = 0;
+    for (_k, atom_indexes) in restraints.iter() {
+        for &i in atom_indexes.iter() {
+            if interface[i] == 1 {
+                num_residues += 1;
+                break;
+            }
+        }
+    }
+    num_residues as f64 / restraints.len() as f64
+}
+
+pub fn membrane_intersection(interface: &[usize], membrane: &[usize]) -> f64 {
+    if membrane.is_empty() {
+        return 0.0
+    }
+    let mut num_beads = 0;
+    for &i_bead in membrane.iter() {
+        num_beads += interface[i_bead];
+    }
+    num_beads as f64 / membrane.len() as f64
 }
