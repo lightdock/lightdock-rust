@@ -208,7 +208,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
 
     // Glowworm Swarm Optimization algorithm
     println!("Creating GSO with {} glowworms", positions.len());
-    let mut gso = GSO::new(&positions, seed, &scoring, &receptor_model, &ligand_model, setup.use_anm);
+    let mut gso = GSO::new(&positions, seed, &scoring, method, &receptor_model, &ligand_model, setup.use_anm);
 
     // Simulate for the given steps
     println!("Starting optimization ({} steps)", steps);

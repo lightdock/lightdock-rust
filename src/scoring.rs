@@ -1,6 +1,5 @@
-use lib3dmol::structures::Structure;
 use std::collections::HashMap;
-
+use lib3dmol::structures::Structure;
 
 pub struct DockingModel {
     pub atoms: Vec<usize>,

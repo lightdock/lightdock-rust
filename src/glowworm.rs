@@ -4,7 +4,6 @@ use super::scoring::{Score, DockingModel};
 use super::qt::Quaternion;
 use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP, MEMBRANE_PENALTY_SCORE};
 
-
 pub struct Glowworm<'a> {
     pub id: u32,
     pub translation: Vec<f64>,
@@ -60,7 +59,9 @@ impl<'a> Glowworm<'a> {
 
     pub fn compute_luciferin(&mut self) {
         if self.moved || self.step == 0 {
+
             let mut receptor_coordinates: Vec<[f64; 3]> = self.receptor.coordinates.clone();
+
             let rec_num_atoms = receptor_coordinates.len();
             let mut ligand_coordinates: Vec<[f64; 3]> = self.ligand.coordinates.clone();
             let lig_num_atoms = ligand_coordinates.len();

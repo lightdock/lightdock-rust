@@ -1,5 +1,4 @@
 use lib3dmol::structures::Structure;
-use lib3dmol::parser;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -101,19 +100,31 @@ pub struct DFIRE {
 	pub potential: Vec<f64>,
 }
 
+pub struct DFIREDockingModel {
+    model: DockingModel,
+}
+
+impl std::ops::Deref for DFIREDockingModel {
+    type Target = DockingModel;
+
+    fn deref(&self) -> &Self::Target { &self.model }
+}
+
 impl Score for DFIRE {
 
     fn get_docking_model(&self, structure: &Structure,
         active_restraints: &[String], passive_restraints: &[String],
-        nmodes: &Vec<f64>, num_anm: usize) -> DockingModel {
-        let mut model = DockingModel {
-            atoms: Vec::new(),
-            coordinates: Vec::new(),
-            membrane: Vec::new(),
-            active_restraints: HashMap::new(),
-            passive_restraints: HashMap::new(),
-            nmodes: nmodes.clone(),
-            num_anm: num_anm,
+        nmodes: &Vec<f64>, num_anm: usize) -> DFIREDockingModel {
+        let mut model = DFIREDockingModel {
+            model: DockingModel {
+                atoms: Vec::new(),
+                coordinates: Vec::new(),
+                membrane: Vec::new(),
+                active_restraints: HashMap::new(),
+                passive_restraints: HashMap::new(),
+                nmodes: nmodes.clone(),
+                num_anm: num_anm,
+            },
         };
 
         let mut atom_index: u64 = 0;
@@ -128,27 +139,27 @@ impl Score for DFIRE {
                     // Membrane beads MMB.BJ
                     let rec_atom_type = format!("{}{}", residue.name.trim(), atom.name.trim());
                     if rec_atom_type == "MMBBJ" {
-                        model.membrane.push(atom_index as usize);
+                        model.model.membrane.push(atom_index as usize);
                     }
 
                     if active_restraints.contains(&res_id) {
-                        match model.active_restraints.get_mut(&res_id) {
+                        match model.model.active_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
                             },
                             None => {
-                                model.active_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
+                                model.model.active_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
                             },
                         }
                     }
 
                     if passive_restraints.contains(&res_id) {
-                        match model.passive_restraints.get_mut(&res_id) {
+                        match model.model.passive_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
                             },
                             None => {
-                                model.passive_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
+                                model.model.passive_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
                             },
                         }
                     }
@@ -159,8 +170,8 @@ impl Score for DFIRE {
                         _ => panic!("Not supported atom type {:?}", rec_atom_type),
                     };
                     let atoma = ATOMRES[rnuma][anuma];
-                    model.atoms.push(atoma);
-                    model.coordinates.push([atom.coord[0] as f64, atom.coord[1] as f64, atom.coord[2] as f64]);
+                    model.model.atoms.push(atoma);
+                    model.model.coordinates.push([atom.coord[0] as f64, atom.coord[1] as f64, atom.coord[2] as f64]);
                     atom_index += 1;
                 }
             }
