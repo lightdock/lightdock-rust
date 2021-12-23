@@ -6,6 +6,7 @@ use lightdock::GSO;
 use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_NM_FILE, DEFAULT_LIG_NM_FILE};
 use lightdock::scoring::{Score, Method};
 use lightdock::dfire::DFIRE;
+use lightdock::dna::DNA;
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -105,6 +106,7 @@ fn run() {
             // parse the type
             let method = match &method_type[..] {
                 "dfire" => Method::DFIRE,
+                "dna" => Method::DNA,
                 _ => {
                     eprintln!("Error: method not supported");
                     return;
@@ -190,6 +192,8 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
     println!("Loading {:?} scoring function", method);
     let scoring = match method {
         Method::DFIRE => DFIRE::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
+            ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
+        Method::DNA => DNA::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
             ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
     };
 
