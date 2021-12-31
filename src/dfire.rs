@@ -109,15 +109,15 @@ pub struct DFIREDockingModel {
 impl<'a> DFIREDockingModel {
 
     fn new(structure: &'a Structure, active_restraints: &'a [String], passive_restraints: &'a [String],
-        nmodes: &'a Vec<f64>, num_anm: usize) -> DFIREDockingModel {
+        nmodes: &[f64], num_anm: usize) -> DFIREDockingModel {
         let mut model = DFIREDockingModel {
             atoms: Vec::new(),
             coordinates: Vec::new(),
             membrane: Vec::new(),
             active_restraints: HashMap::new(),
             passive_restraints: HashMap::new(),
-            nmodes: nmodes.clone(),
-            num_anm: num_anm,
+            nmodes: nmodes.to_owned(),
+            num_anm,
         };
 
         let mut atom_index: u64 = 0;
@@ -213,8 +213,8 @@ impl<'a> DFIRE {
         let split = raw_parameters.lines();
         let params: Vec<&str> = split.collect();
 
-        for count in 0..168*168*20 {
-            self.potential.push(params[count].trim().parse::<f64>().unwrap());
+        for param in params.iter().take(168*168*20) {
+            self.potential.push(param.trim().parse::<f64>().unwrap());
         }
     }
 
@@ -225,8 +225,8 @@ impl<'a> DFIRE {
 
 impl<'a> Score for DFIRE {
 
-    fn energy(&self, translation: &Vec<f64>, rotation: &Quaternion,
-        rec_nmodes: &Vec<f64>, lig_nmodes: &Vec<f64>) -> f64 {
+    fn energy(&self, translation: &[f64], rotation: &Quaternion,
+        rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
         let mut score: f64 = 0.0;
 
         // Clone receptor coordinates

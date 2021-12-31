@@ -140,15 +140,15 @@ pub struct DNADockingModel {
 impl<'a> DNADockingModel {
 
     fn new(structure: &'a Structure, active_restraints: &'a [String], passive_restraints: &'a [String],
-        nmodes: &'a Vec<f64>, num_anm: usize) -> DNADockingModel {
+        nmodes: &[f64], num_anm: usize) -> DNADockingModel {
         let mut model = DNADockingModel {
             atoms: Vec::new(),
             coordinates: Vec::new(),
             membrane: Vec::new(),
             active_restraints: HashMap::new(),
             passive_restraints: HashMap::new(),
-            nmodes: nmodes.clone(),
-            num_anm: num_anm,
+            nmodes: nmodes.to_owned(),
+            num_anm,
             amber_types: Vec::new(),
         };
 
@@ -242,8 +242,8 @@ impl<'a> DNA {
 
 impl<'a> Score for DNA {
 
-    fn energy(&self, translation: &Vec<f64>, rotation: &Quaternion,
-        rec_nmodes: &Vec<f64>, lig_nmodes: &Vec<f64>) -> f64 {
+    fn energy(&self, translation: &[f64], rotation: &Quaternion,
+        rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
         let mut score: f64 = 0.0;
 
         // Clone receptor coordinates
@@ -319,49 +319,5 @@ impl<'a> Score for DNA {
         }
 
         score + perc_receptor_restraints * score + perc_ligand_restraints * score - membrane_penalty
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_read_potentials() {
-        let mut scoring = DNA {
-            potential: Vec::with_capacity(168 * 168 * 20),
-        };
-        scoring.load_potentials();
-        assert_eq!(scoring.potential[0], 10.0);
-        assert_eq!(scoring.potential[2], -0.624030868);
-        assert_eq!(scoring.potential[4998], -0.0458685914);
-        assert_eq!(scoring.potential[168*168*20-1], 0.0);
-    }
-
-    #[test]
-    fn test_2oob() {
-        let cargo_path = match env::var("CARGO_MANIFEST_DIR") {
-            Ok(val) => val,
-            Err(_) => String::from("."),
-        };
-        let test_path: String = format!("{}/tests/2oob", cargo_path);
-
-        let scoring = DNA::new();
-
-        let receptor_filename: String = format!("{}/2oob_receptor.pdb", test_path);
-        let receptor = parser::read_pdb(&receptor_filename, "receptor");
-        let receptor_model = scoring.get_docking_model(&receptor, &Vec::new(), &Vec::new(), &Vec::new(), 0);
-
-        let ligand_filename: String = format!("{}/2oob_ligand.pdb", test_path);
-        let ligand = parser::read_pdb(&ligand_filename, "ligand");
-        let ligand_model = scoring.get_docking_model(&ligand, &Vec::new(), &Vec::new(), &Vec::new(), 0);
-
-        let mut receptor_coordinates: Vec<[f64; 3]> = receptor_model.coordinates.clone();
-        let mut ligand_coordinates: Vec<[f64; 3]> = ligand_model.coordinates.clone();
-        let mut interface_receptor: Vec<usize> = vec![0; receptor_coordinates.len()];
-        let mut interface_ligand: Vec<usize> = vec![0; ligand_coordinates.len()];
-        let energy = scoring.energy(&receptor_model, &ligand_model, &receptor_coordinates, &ligand_coordinates,
-                                    &mut interface_receptor, &mut interface_ligand);
-        assert_eq!(energy, 16.7540569503498);
     }
 }

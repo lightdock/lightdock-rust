@@ -136,7 +136,7 @@ impl<'a> Glowworm<'a> {
             self.rotation = self.rotation.slerp(other_rotation, DEFAULT_ROTATION_STEP);
             
             // ANM component
-            if self.use_anm && self.rec_nmodes.len() > 0 {
+            if self.use_anm && !self.rec_nmodes.is_empty() {
                 let mut delta_anm:Vec<f64> = Vec::new();
                 let mut cum_norm: f64 = 0.0;
                 for i in 0..self.rec_nmodes.len() {
@@ -151,7 +151,7 @@ impl<'a> Glowworm<'a> {
                     self.rec_nmodes[i] += delta_anm[i];
                 }
             }
-            if self.use_anm && self.lig_nmodes.len() > 0 {
+            if self.use_anm && !self.lig_nmodes.is_empty() {
                 let mut delta_anm:Vec<f64> = Vec::new();
                 let mut cum_norm: f64 = 0.0;
                 for i in 0..self.lig_nmodes.len() {

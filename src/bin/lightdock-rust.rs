@@ -102,7 +102,7 @@ fn run() {
                     return;
                 },
             };
-            let method_type = &args[4].to_lowercase().to_owned();
+            let method_type = &args[4].to_lowercase();
             // parse the type
             let method = match &method_type[..] {
                 "dfire" => Method::DFIRE,

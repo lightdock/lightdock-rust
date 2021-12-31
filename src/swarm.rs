@@ -24,13 +24,13 @@ impl<'a> Swarm<'a> {
     	}
     }
 
-    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a Box<dyn Score>, use_anm: bool,
+    pub fn add_glowworms(&mut self, positions: &[Vec<f64>], scoring: &'a Box<dyn Score>, use_anm: bool,
         rec_num_anm: usize, lig_num_anm: usize) {
-    	for i in 0..positions.len() {
+    	for (i, position) in positions.iter().enumerate() {
             // Translation component
-            let translation = vec![positions[i][0], positions[i][1], positions[i][2]];
+            let translation = vec![position[0], position[1], position[2]];
             // Rotation component
-            let rotation = Quaternion::new(positions[i][3], positions[i][4], positions[i][5], positions[i][6]);
+            let rotation = Quaternion::new(position[3], position[4], position[5], position[6]);
             // ANM for receptor
             let mut rec_nmodes: Vec<f64> = Vec::new();
             if use_anm && rec_num_anm > 0 {
@@ -64,7 +64,7 @@ impl<'a> Swarm<'a> {
         let mut anm_ligs: Vec<Vec<f64>> = Vec::new();
     	for glowworm in self.glowworms.iter(){
     		positions.push(glowworm.translation.clone());
-            rotations.push(glowworm.rotation.clone());
+            rotations.push(glowworm.rotation);
             anm_recs.push(glowworm.rec_nmodes.clone());
             anm_ligs.push(glowworm.lig_nmodes.clone());
     	}
@@ -120,12 +120,12 @@ impl<'a> Swarm<'a> {
             write!(output, "({:.7}, {:.7}, {:.7}, {:.7}, {:.7}, {:.7}, {:.7}", 
                 glowworm.translation[0], glowworm.translation[1], glowworm.translation[2],
                 glowworm.rotation.w, glowworm.rotation.x, glowworm.rotation.y, glowworm.rotation.z)?;
-            if glowworm.use_anm && glowworm.rec_nmodes.len() > 0 {
+            if glowworm.use_anm && !glowworm.rec_nmodes.is_empty() {
                 for i in 0..glowworm.rec_nmodes.len() {
                     write!(output, ", {:.7}", glowworm.rec_nmodes[i])?;
                 }
             }
-            if glowworm.use_anm && glowworm.lig_nmodes.len() > 0 {
+            if glowworm.use_anm && !glowworm.lig_nmodes.is_empty() {
                 for i in 0..glowworm.lig_nmodes.len() {
                     write!(output, ", {:.7}", glowworm.lig_nmodes[i])?;
                 }

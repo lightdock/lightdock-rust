@@ -24,7 +24,7 @@ pub struct GSO<'a> {
 
 
 impl<'a> GSO<'a> {
-    pub fn new(positions: &Vec<Vec<f64>>, seed: u64, scoring: &'a Box<dyn Score>, use_anm: bool,
+    pub fn new(positions: &[Vec<f64>], seed: u64, scoring: &'a Box<dyn Score>, use_anm: bool,
         rec_num_anm: usize, lig_num_anm: usize) -> Self {
         let mut gso = GSO {
             swarm: Swarm::new(),

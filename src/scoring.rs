@@ -9,8 +9,8 @@ pub enum Method {
 }
 
 pub trait Score {
-    fn energy(&self, translation: &Vec<f64>, rotation: &Quaternion,
-        rec_nmodes: &Vec<f64>, lig_nmodes: &Vec<f64>) -> f64;
+    fn energy(&self, translation: &[f64], rotation: &Quaternion,
+        rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64;
 }
 
 pub fn satisfied_restraints(interface: &[usize], restraints: &HashMap<String, Vec<usize>>) -> f64 {
