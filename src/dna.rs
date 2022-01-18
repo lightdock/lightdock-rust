@@ -1,7 +1,7 @@
 use lib3dmol::structures::Structure;
 use std::collections::HashMap;
 use super::qt::Quaternion;
-use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
+use super::constants::{INTERFACE_CUTOFF2, MEMBRANE_PENALTY_SCORE};
 use super::scoring::{Score, satisfied_restraints, membrane_intersection};
 
 macro_rules! hashmap {
@@ -374,7 +374,6 @@ impl<'a> Score for DNA {
 
     fn energy(&self, translation: &[f64], rotation: &Quaternion,
         rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
-        let mut score: f64 = 0.0;
 
         // Clone receptor coordinates
         let mut receptor_coordinates: Vec<[f64; 3]> = self.receptor.coordinates.clone();
@@ -453,18 +452,14 @@ impl<'a> Score for DNA {
                 }
 
                 // Interface calculation
-                if distance2 <= 225. {
-                    let d = distance2.sqrt()*2.0 - 1.0;
-                    score += 1.0;
-                    if d <= INTERFACE_CUTOFF {
-                        interface_receptor[i] = 1;
-                        interface_ligand[j] = 1;
-                    }
+                if distance2 <= INTERFACE_CUTOFF2 {
+                    interface_receptor[i] = 1;
+                    interface_ligand[j] = 1;
                 }
             }
         }
         total_elec = total_elec * FACTOR / EPSILON;
-        score = (total_elec + total_vdw) * -1.0;
+        let score = (total_elec + total_vdw) * -1.0;
 
         // Bias the scoring depending on satisfied restraints
         let perc_receptor_restraints: f64 = satisfied_restraints(&interface_receptor,
