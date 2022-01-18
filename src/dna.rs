@@ -481,3 +481,34 @@ impl<'a> Score for DNA {
         score + perc_receptor_restraints * score + perc_ligand_restraints * score - membrane_penalty
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    use lib3dmol::parser;
+    use crate::qt::Quaternion;
+
+    #[test]
+    fn test_1azp() {
+        let cargo_path = match env::var("CARGO_MANIFEST_DIR") {
+            Ok(val) => val,
+            Err(_) => String::from("."),
+        };
+        let test_path: String = format!("{}/tests/1azp", cargo_path);
+
+        let receptor_filename: String = format!("{}/1azp_receptor.pdb", test_path);
+        let receptor = parser::read_pdb(&receptor_filename, "receptor");
+
+        let ligand_filename: String = format!("{}/1azp_ligand.pdb", test_path);
+        let ligand = parser::read_pdb(&ligand_filename, "ligand");
+
+        let scoring = DNA::new(receptor, Vec::new(), Vec::new(), Vec::new(), 0, ligand, Vec::new(), Vec::new(), Vec::new(), 0, false);
+
+        let translation = vec![0., 0., 0.];
+        let rotation = Quaternion::default();
+        let energy = scoring.energy(&translation, &rotation, &Vec::new(), &Vec::new());
+        assert_eq!(energy, -364.8812635815898);
+    }
+}
+
