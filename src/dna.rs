@@ -503,7 +503,7 @@ mod tests {
         let translation = vec![0., 0., 0.];
         let rotation = Quaternion::default();
         let energy = scoring.energy(&translation, &rotation, &Vec::new(), &Vec::new());
-        assert_eq!(energy, -364.8812635815898);
+        assert_eq!(energy, -364.88131078632557);
     }
 }
 
