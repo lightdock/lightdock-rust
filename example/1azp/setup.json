@@ -6,7 +6,9 @@
     "glowworms": 200,
     "ligand_pdb": "dna.pdb",
     "ligand_restraints": {
-        "active": [],
+        "active": [
+            "B.DT.13"
+        ],
         "blocked": [],
         "passive": []
     },
