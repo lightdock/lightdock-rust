@@ -21,6 +21,8 @@ const ELEC_DIST_CUTOFF: f64 = 30.0;
 const ELEC_DIST_CUTOFF2: f64 = ELEC_DIST_CUTOFF*ELEC_DIST_CUTOFF;
 const VDW_DIST_CUTOFF: f64 = 10.0;
 const VDW_DIST_CUTOFF2: f64 = VDW_DIST_CUTOFF*VDW_DIST_CUTOFF;
+const ELEC_MAX_CUTOFF: f64 = MAX_ES_CUTOFF*EPSILON/FACTOR;
+const ELEC_MIN_CUTOFF: f64 = MIN_ES_CUTOFF*EPSILON/FACTOR;
 
 pub fn atoms_in_residues(residue_name: &str) -> &'static [&'static str] {
        match residue_name {
@@ -232,7 +234,6 @@ pub struct DNADockingModel {
     pub passive_restraints: HashMap<String, Vec<usize>>,
     pub num_anm: usize,
     pub nmodes: Vec<f64>,
-    pub amber_types: Vec<String>,
     pub vdw_radii: Vec<f64>,
     pub vdw_charges: Vec<f64>,
     pub ele_charges: Vec<f64>,
@@ -250,7 +251,6 @@ impl<'a> DNADockingModel {
             passive_restraints: HashMap::new(),
             nmodes: nmodes.to_owned(),
             num_anm,
-            amber_types: Vec::new(),
             vdw_radii: Vec::new(),
             vdw_charges: Vec::new(),
             ele_charges: Vec::new(),
@@ -311,7 +311,6 @@ impl<'a> DNADockingModel {
                             }
                         },
                     };
-                    model.amber_types.push(amber_type.to_string());
 
                     // Assign electrostatics charge
                     let ele_charge = match ELE_CHARGES.get(&*atom_id) {
@@ -430,11 +429,11 @@ impl<'a> Score for DNA {
                 // Electrostatics energy
                 if distance2 <= ELEC_DIST_CUTOFF2 {
                     let mut atom_elec = self.receptor.ele_charges[i] * self.ligand.ele_charges[j] / distance2;
-                    if atom_elec >= (MAX_ES_CUTOFF*EPSILON/FACTOR) {
-                        atom_elec = MAX_ES_CUTOFF*EPSILON/FACTOR;
+                    if atom_elec > ELEC_MAX_CUTOFF {
+                        atom_elec = ELEC_MAX_CUTOFF;
                     }
-                    if atom_elec <= (MIN_ES_CUTOFF*EPSILON/FACTOR) {
-                        atom_elec = MIN_ES_CUTOFF*EPSILON/FACTOR;
+                    if atom_elec < ELEC_MIN_CUTOFF {
+                        atom_elec = ELEC_MIN_CUTOFF;
                     }
                     total_elec += atom_elec;
                 }
