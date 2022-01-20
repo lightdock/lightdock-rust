@@ -12,6 +12,7 @@ pub const LINEAR_THRESHOLD: f64 = 0.9995;
 
 // Atomic contact is below this value
 pub const INTERFACE_CUTOFF: f64 = 3.9;
+pub const INTERFACE_CUTOFF2: f64 = INTERFACE_CUTOFF * INTERFACE_CUTOFF;
 
 // Parsed PDB structures by lightdock start with this prefix
 pub const DEFAULT_LIGHTDOCK_PREFIX: &str = "lightdock_";

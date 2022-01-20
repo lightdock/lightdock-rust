@@ -11,6 +11,7 @@
     },
     "membrane": false,
     "noh": true,
+    "now": true,
     "noxt": true,
     "receptor_pdb": "1czy_protein.pdb",
     "receptor_restraints": {

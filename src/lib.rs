@@ -1,4 +1,5 @@
 #[macro_use]
+
 extern crate lazy_static;
 extern crate rand;
 
@@ -7,14 +8,15 @@ pub mod swarm;
 pub mod qt;
 pub mod constants;
 pub mod scoring;
+pub mod dfire;
+pub mod dna;
 
 use swarm::Swarm;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use scoring::{Score, DockingModel};
+use scoring::Score;
 
 
-#[derive(Debug)]
 pub struct GSO<'a> {
     pub swarm: Swarm<'a>,
     pub rng: StdRng,
@@ -22,13 +24,13 @@ pub struct GSO<'a> {
 
 
 impl<'a> GSO<'a> {
-    pub fn new(positions: &Vec<Vec<f64>>, seed: u64, scoring: &'a Score, 
-        receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
+    pub fn new(positions: &[Vec<f64>], seed: u64, scoring: &'a Box<dyn Score>, use_anm: bool,
+        rec_num_anm: usize, lig_num_anm: usize) -> Self {
         let mut gso = GSO {
             swarm: Swarm::new(),
             rng: SeedableRng::seed_from_u64(seed),
         };
-        gso.swarm.add_glowworms(positions, scoring, receptor, ligand, use_anm);
+        gso.swarm.add_glowworms(positions, scoring, use_anm, rec_num_anm, lig_num_anm);
         gso
     }
 

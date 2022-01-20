@@ -1,20 +1,15 @@
 use std::f64;
-use std::collections::HashMap;
-use super::scoring::{Score, DockingModel};
+use super::scoring::Score;
 use super::qt::Quaternion;
-use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP, MEMBRANE_PENALTY_SCORE};
+use super::constants::{DEFAULT_TRANSLATION_STEP, DEFAULT_ROTATION_STEP, DEFAULT_NMODES_STEP};
 
-
-#[derive(Debug)]
 pub struct Glowworm<'a> {
     pub id: u32,
     pub translation: Vec<f64>,
     pub rotation: Quaternion,
     pub rec_nmodes: Vec<f64>,
     pub lig_nmodes: Vec<f64>,
-    pub scoring_function: &'a Score,
-    pub receptor: &'a DockingModel,
-    pub ligand: &'a DockingModel,
+    pub scoring_function: &'a Box<dyn Score>,
     pub rho: f64,
     pub gamma: f64,
     pub beta: f64,
@@ -32,8 +27,8 @@ pub struct Glowworm<'a> {
 
 impl<'a> Glowworm<'a> {
      pub fn new(id: u32, translation:Vec<f64>, rotation:Quaternion, 
-        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a Score,
-        receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) -> Self {
+        rec_nmodes: Vec<f64>, lig_nmodes: Vec<f64>, scoring_function: &'a Box<dyn Score>,
+        use_anm: bool) -> Self {
         Glowworm {
             id,
             translation,
@@ -41,8 +36,6 @@ impl<'a> Glowworm<'a> {
             rec_nmodes,
             lig_nmodes,
             scoring_function,
-            receptor,
-            ligand,
             rho: 0.5,
             gamma: 0.4,
             beta: 0.08,
@@ -61,62 +54,8 @@ impl<'a> Glowworm<'a> {
 
     pub fn compute_luciferin(&mut self) {
         if self.moved || self.step == 0 {
-            let mut receptor_coordinates: Vec<[f64; 3]> = self.receptor.coordinates.clone();
-            let rec_num_atoms = receptor_coordinates.len();
-            let mut ligand_coordinates: Vec<[f64; 3]> = self.ligand.coordinates.clone();
-            let lig_num_atoms = ligand_coordinates.len();
-            // Get the proper ligand pose
-            for (i_atom, coordinate) in ligand_coordinates.iter_mut().enumerate() {
-                // First rotate
-                let rotated_coordinate = self.rotation.rotate(coordinate.to_vec());
-                // Then tranlate
-                coordinate[0] = rotated_coordinate[0] + self.translation[0];
-                coordinate[1] = rotated_coordinate[1] + self.translation[1];
-                coordinate[2] = rotated_coordinate[2] + self.translation[2];
-                // ANM
-                if self.use_anm && self.ligand.num_anm > 0 {
-                    for i_nm in 0usize..self.ligand.num_anm {
-                        // (num_anm, num_atoms, 3) -> 1d
-                        // Endiannes: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                        coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3] * self.lig_nmodes[i_nm];
-                        coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1] * self.lig_nmodes[i_nm];
-                        coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2] * self.lig_nmodes[i_nm];
-                    }
-                }
-            }
-            // Receptor only needs to use ANM
-            for (i_atom, coordinate) in receptor_coordinates.iter_mut().enumerate() {
-                // ANM
-                if self.use_anm && self.receptor.num_anm > 0 {
-                    for i_nm in 0usize..self.receptor.num_anm {
-                        // (num_anm, num_atoms, 3) -> 1d
-                        // Endiannes: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                        coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3] * self.rec_nmodes[i_nm];
-                        coordinate[1] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 1] * self.rec_nmodes[i_nm];
-                        coordinate[2] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 2] * self.rec_nmodes[i_nm];
-                    }
-                }
-            }
-            // Calculate scoring and interface
-            let mut interface_receptor: Vec<usize> = vec![0; receptor_coordinates.len()];
-            let mut interface_ligand: Vec<usize> = vec![0; ligand_coordinates.len()];
-            let energy = self.scoring_function.energy(self.receptor, self.ligand, 
-                &receptor_coordinates, &ligand_coordinates, 
-                &mut interface_receptor, &mut interface_ligand);
-            // Bias the scoring depending on satisfied restraints
-            let perc_receptor_restraints: f64 = satisfied_restraints(&interface_receptor, 
-                &self.receptor.active_restraints);
-            let perc_ligand_restraints: f64 = satisfied_restraints(&interface_ligand, 
-                &self.ligand.active_restraints);
-            // Take into account membrane intersection
-            let mut membrane_penalty: f64 = 0.0;
-            let intersection = membrane_intersection(&interface_receptor, &self.receptor.membrane);
-            if intersection > 0.0 {
-                membrane_penalty = MEMBRANE_PENALTY_SCORE * intersection;
-            }
-            
-            self.scoring = energy + perc_receptor_restraints * energy 
-                + perc_ligand_restraints * energy - membrane_penalty;
+            self.scoring = self.scoring_function.energy(&self.translation, &self.rotation,
+                &self.rec_nmodes, &self.lig_nmodes);
         }
         self.luciferin = (1.0 - self.rho) * self.luciferin + self.gamma * self.scoring;
         self.step += 1;
@@ -197,7 +136,7 @@ impl<'a> Glowworm<'a> {
             self.rotation = self.rotation.slerp(other_rotation, DEFAULT_ROTATION_STEP);
             
             // ANM component
-            if self.use_anm && self.receptor.num_anm > 0 {
+            if self.use_anm && !self.rec_nmodes.is_empty() {
                 let mut delta_anm:Vec<f64> = Vec::new();
                 let mut cum_norm: f64 = 0.0;
                 for i in 0..self.rec_nmodes.len() {
@@ -212,7 +151,7 @@ impl<'a> Glowworm<'a> {
                     self.rec_nmodes[i] += delta_anm[i];
                 }
             }
-            if self.use_anm && self.ligand.num_anm > 0 {
+            if self.use_anm && !self.lig_nmodes.is_empty() {
                 let mut delta_anm:Vec<f64> = Vec::new();
                 let mut cum_norm: f64 = 0.0;
                 for i in 0..self.lig_nmodes.len() {
@@ -240,32 +179,4 @@ pub fn distance(one: &Glowworm, two: &Glowworm) -> f64 {
     let z1 = one.translation[2];
     let z2 = two.translation[2];
     ((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2)).sqrt()
-}
-
-pub fn satisfied_restraints(interface: &[usize], restraints: &HashMap<String, Vec<usize>>) -> f64 {
-    // Calculate the percentage of satisfied restraints
-    if restraints.is_empty() {
-        return 0.0
-    }
-    let mut num_residues = 0;
-    for (_k, atom_indexes) in restraints.iter() {
-        for &i in atom_indexes.iter() {
-            if interface[i] == 1 {
-                num_residues += 1;
-                break;
-            }
-        }
-    }
-    num_residues as f64 / restraints.len() as f64
-}
-
-pub fn membrane_intersection(interface: &[usize], membrane: &[usize]) -> f64 {
-    if membrane.is_empty() {
-        return 0.0
-    }
-    let mut num_beads = 0;
-    for &i_bead in membrane.iter() {
-        num_beads += interface[i_bead];
-    }
-    num_beads as f64 / membrane.len() as f64
 }

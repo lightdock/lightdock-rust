@@ -1,13 +1,12 @@
 use super::glowworm::Glowworm;
 use super::glowworm::distance;
-use super::scoring::{Score, DockingModel};
+use super::scoring::Score;
 use super::qt::Quaternion;
 use rand::Rng;
 use std::fs::File;
 use std::io::{Write, Error};
 
 
-#[derive(Debug)]
 pub struct Swarm<'a> {
 	pub glowworms: Vec<Glowworm<'a>>,
 }
@@ -25,29 +24,28 @@ impl<'a> Swarm<'a> {
     	}
     }
 
-    pub fn add_glowworms(&mut self, positions: &Vec<Vec<f64>>, scoring: &'a Score,
-        receptor: &'a DockingModel, ligand: &'a DockingModel, use_anm: bool) {
-    	for i in 0..positions.len() {
+    pub fn add_glowworms(&mut self, positions: &[Vec<f64>], scoring: &'a Box<dyn Score>, use_anm: bool,
+        rec_num_anm: usize, lig_num_anm: usize) {
+    	for (i, position) in positions.iter().enumerate() {
             // Translation component
-            let translation = vec![positions[i][0], positions[i][1], positions[i][2]];
+            let translation = vec![position[0], position[1], position[2]];
             // Rotation component
-            let rotation = Quaternion::new(positions[i][3], positions[i][4], positions[i][5], positions[i][6]);
+            let rotation = Quaternion::new(position[3], position[4], position[5], position[6]);
             // ANM for receptor
             let mut rec_nmodes: Vec<f64> = Vec::new();
-            if use_anm && receptor.num_anm > 0 {
-                for j in 7..7+receptor.num_anm {
+            if use_anm && rec_num_anm > 0 {
+                for j in 7..7+rec_num_anm {
                     rec_nmodes.push(positions[i][j as usize]);
                 }
             }
             // ANM for ligand
             let mut lig_nmodes: Vec<f64> = Vec::new();
-            if use_anm && ligand.num_anm > 0 {
-                for j in 7+receptor.num_anm..positions[i].len() {
+            if use_anm && lig_num_anm > 0 {
+                for j in 7+rec_num_anm..positions[i].len() {
                     lig_nmodes.push(positions[i][j as usize]);
                 }
             }
-            let glowworm = Glowworm::new(i as u32, translation, rotation, rec_nmodes, lig_nmodes, 
-                scoring, receptor, ligand, use_anm);
+            let glowworm = Glowworm::new(i as u32, translation, rotation, rec_nmodes, lig_nmodes, scoring, use_anm);
     		self.glowworms.push(glowworm);
     	}
     }
@@ -66,7 +64,7 @@ impl<'a> Swarm<'a> {
         let mut anm_ligs: Vec<Vec<f64>> = Vec::new();
     	for glowworm in self.glowworms.iter(){
     		positions.push(glowworm.translation.clone());
-            rotations.push(glowworm.rotation.clone());
+            rotations.push(glowworm.rotation);
             anm_recs.push(glowworm.rec_nmodes.clone());
             anm_ligs.push(glowworm.lig_nmodes.clone());
     	}
@@ -122,13 +120,13 @@ impl<'a> Swarm<'a> {
             write!(output, "({:.7}, {:.7}, {:.7}, {:.7}, {:.7}, {:.7}, {:.7}", 
                 glowworm.translation[0], glowworm.translation[1], glowworm.translation[2],
                 glowworm.rotation.w, glowworm.rotation.x, glowworm.rotation.y, glowworm.rotation.z)?;
-            if glowworm.use_anm && glowworm.receptor.num_anm > 0 {
-                for i in 0..glowworm.receptor.num_anm {
+            if glowworm.use_anm && !glowworm.rec_nmodes.is_empty() {
+                for i in 0..glowworm.rec_nmodes.len() {
                     write!(output, ", {:.7}", glowworm.rec_nmodes[i])?;
                 }
             }
-            if glowworm.use_anm && glowworm.ligand.num_anm > 0 {
-                for i in 0..glowworm.ligand.num_anm {
+            if glowworm.use_anm && !glowworm.lig_nmodes.is_empty() {
+                for i in 0..glowworm.lig_nmodes.len() {
                     write!(output, ", {:.7}", glowworm.lig_nmodes[i])?;
                 }
             }

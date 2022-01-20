@@ -13,6 +13,7 @@
     "anm_lig": 10, 
     "verbose_parser": false, 
     "noxt": true, 
+    "now": true,
     "restraints": null, 
     "use_anm": false, 
     "glowworms": 200, 

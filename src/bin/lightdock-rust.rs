@@ -5,6 +5,8 @@ extern crate npy;
 use lightdock::GSO;
 use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_NM_FILE, DEFAULT_LIG_NM_FILE};
 use lightdock::scoring::{Score, Method};
+use lightdock::dfire::DFIRE;
+use lightdock::dna::DNA;
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -19,7 +21,6 @@ use npy::NpyData;
 
 // Use 8MB as binary stack
 const STACK_SIZE: usize = 8 * 1024 * 1024;
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SetupFile {
@@ -44,7 +45,6 @@ struct SetupFile {
     ligand_restraints: Option<HashMap<String, Vec<String>>>,
 }
 
-
 fn read_setup_from_file<P: AsRef<Path>>(path: P) -> Result<SetupFile, Box<dyn Error>> {
     // Open the file in read-only mode with buffer.
     let file = File::open(path)?;
@@ -54,7 +54,6 @@ fn read_setup_from_file<P: AsRef<Path>>(path: P) -> Result<SetupFile, Box<dyn Er
     // Return the `SetupFile`.
     Ok(u)
 }
-
 
 fn parse_input_coordinates(swarm_filename: &str) -> Vec<Vec<f64>> {
     // Parse swarm filename content
@@ -73,7 +72,6 @@ fn parse_input_coordinates(swarm_filename: &str) -> Vec<Vec<f64>> {
     }
     positions
 }
-
 
 fn main() {
     // Spawn thread with explicit stack size
@@ -104,10 +102,11 @@ fn run() {
                     return;
                 },
             };
-            let method_type = &args[4].to_lowercase().to_owned();
+            let method_type = &args[4].to_lowercase();
             // parse the type
             let method = match &method_type[..] {
                 "dfire" => Method::DFIRE,
+                "dna" => Method::DNA,
                 _ => {
                     eprintln!("Error: method not supported");
                     return;
@@ -124,7 +123,6 @@ fn run() {
         }
     }
 }
-
 
 fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method) {
 
@@ -150,10 +148,6 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
     println!("Reading ligand input structure: {}", ligand_filename);
     let ligand = parser::read_pdb(&ligand_filename, "ligand");
 
-    // Scoring function
-    println!("Loading {:?} scoring function", method);
-    let scoring = Score::new(method);
-
     // Read ANM data if activated
     let mut rec_nm: Vec<f64> = Vec::new();
     let mut lig_nm: Vec<f64> = Vec::new();
@@ -176,7 +170,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         }
     }
 
-    // Receptor model
+    // Restraints
     let rec_active_restraints: Vec<String> = match &setup.receptor_restraints {
         Some(restraints) => { restraints["active"].clone() },
         None => { Vec::new() },
@@ -185,10 +179,6 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let receptor_model = Score::get_docking_model(&receptor, 
-        &rec_active_restraints, &rec_passive_restraints, &rec_nm, setup.anm_rec);
-
-    // Ligand model
     let lig_active_restraints: Vec<String> = match &setup.ligand_restraints {
         Some(restraints) => { restraints["active"].clone() },
         None => { Vec::new() },
@@ -197,12 +187,19 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         Some(restraints) => { restraints["passive"].clone() },
         None => { Vec::new() },
     };
-    let ligand_model = Score::get_docking_model(&ligand, 
-        &lig_active_restraints, &lig_passive_restraints, &lig_nm, setup.anm_lig);
+
+    // Scoring function
+    println!("Loading {:?} scoring function", method);
+    let scoring = match method {
+        Method::DFIRE => DFIRE::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
+            ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
+        Method::DNA => DNA::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
+            ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
+    };
 
     // Glowworm Swarm Optimization algorithm
     println!("Creating GSO with {} glowworms", positions.len());
-    let mut gso = GSO::new(&positions, seed, &scoring, &receptor_model, &ligand_model, setup.use_anm);
+    let mut gso = GSO::new(&positions, seed, &scoring, setup.use_anm, setup.anm_rec, setup.anm_lig);
 
     // Simulate for the given steps
     println!("Starting optimization ({} steps)", steps);
