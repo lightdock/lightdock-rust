@@ -7,6 +7,7 @@ use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_N
 use lightdock::scoring::{Score, Method};
 use lightdock::dfire::DFIRE;
 use lightdock::dna::DNA;
+use lightdock::pydock::PYDOCK;
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -107,6 +108,7 @@ fn run() {
             let method = match &method_type[..] {
                 "dfire" => Method::DFIRE,
                 "dna" => Method::DNA,
+                "pydock" => Method::PYDOCK,
                 _ => {
                     eprintln!("Error: method not supported");
                     return;
@@ -194,6 +196,8 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         Method::DFIRE => DFIRE::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
             ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
         Method::DNA => DNA::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
+            ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
+        Method::PYDOCK => PYDOCK::new(receptor, rec_active_restraints, rec_passive_restraints, rec_nm, setup.anm_rec,
             ligand, lig_active_restraints, lig_passive_restraints, lig_nm, setup.anm_lig, setup.use_anm) as Box<dyn Score>,
     };
 

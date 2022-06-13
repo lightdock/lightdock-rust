@@ -10,6 +10,7 @@ pub mod constants;
 pub mod scoring;
 pub mod dfire;
 pub mod dna;
+pub mod pydock;
 
 use swarm::Swarm;
 use rand::SeedableRng;
