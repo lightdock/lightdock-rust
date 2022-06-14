@@ -135,7 +135,8 @@ lazy_static! {
         "THR-C" => "C", "THR-CA" => "CT", "THR-CB" => "CT", "THR-CG2" => "CT", "THR-H" => "H", "THR-HA" => "H1", "THR-HB" => "H1", "THR-HG1" => "HO", "THR-HG21" => "HC", "THR-HG22" => "HC", "THR-HG23" => "HC", "THR-N" => "N", "THR-O" => "O", "THR-OG1" => "OH",
         "TRP-C" => "C", "TRP-CA" => "CT", "TRP-CB" => "CT", "TRP-CD1" => "CW", "TRP-CD2" => "CB", "TRP-CE2" => "CN", "TRP-CE3" => "CA", "TRP-CG" => "C*", "TRP-CH2" => "CA", "TRP-CZ2" => "CA", "TRP-CZ3" => "CA", "TRP-H" => "H", "TRP-HA" => "H1", "TRP-HB2" => "HC", "TRP-HB3" => "HC", "TRP-HD1" => "H4", "TRP-HE1" => "H", "TRP-HE3" => "HA", "TRP-HH2" => "HA", "TRP-HZ2" => "HA", "TRP-HZ3" => "HA", "TRP-N" => "N", "TRP-NE1" => "NA", "TRP-O" => "O",
         "TYR-C" => "C", "TYR-CA" => "CT", "TYR-CB" => "CT", "TYR-CD1" => "CA", "TYR-CD2" => "CA", "TYR-CE1" => "CA", "TYR-CE2" => "CA", "TYR-CG" => "CA", "TYR-CZ" => "C", "TYR-H" => "H", "TYR-HA" => "H1", "TYR-HB2" => "HC", "TYR-HB3" => "HC", "TYR-HD1" => "HA", "TYR-HD2" => "HA", "TYR-HE1" => "HA", "TYR-HE2" => "HA", "TYR-HH" => "HO", "TYR-N" => "N", "TYR-O" => "O", "TYR-OH" => "OH",
-        "VAL-C" => "C", "VAL-CA" => "CT", "VAL-CB" => "CT", "VAL-CG1" => "CT", "VAL-CG2" => "CT", "VAL-H" => "H", "VAL-HA" => "H1", "VAL-HB" => "HC", "VAL-HG11" => "HC", "VAL-HG12" => "HC", "VAL-HG13" => "HC", "VAL-HG21" => "HC", "VAL-HG22" => "HC", "VAL-HG23" => "HC", "VAL-N" => "N", "VAL-O" => "O"];
+        "VAL-C" => "C", "VAL-CA" => "CT", "VAL-CB" => "CT", "VAL-CG1" => "CT", "VAL-CG2" => "CT", "VAL-H" => "H", "VAL-HA" => "H1", "VAL-HB" => "HC", "VAL-HG11" => "HC", "VAL-HG12" => "HC", "VAL-HG13" => "HC", "VAL-HG21" => "HC", "VAL-HG22" => "HC", "VAL-HG23" => "HC", "VAL-N" => "N", "VAL-O" => "O",
+        "*-C" => "C", "*-H" => "H", "*-N" => "N", "*-O" => "O", "*-S" => "S"];
 
     static ref ELE_CHARGES: HashMap<&'static str, f64> = hashmap![
         "ALA-C" => 0.5973, "ALA-CA" => 0.0337, "ALA-CB" => -0.1825, "ALA-H" => 0.2719, "ALA-HA" => 0.0823, "ALA-HB1" => 0.0603, "ALA-HB2" => 0.0603, "ALA-HB3" => 0.0603, "ALA-N" => -0.4157, "ALA-O" => -0.5679,
@@ -197,7 +198,8 @@ lazy_static! {
         "THR-C" => 0.5973, "THR-CA" => -0.0389, "THR-CB" => 0.3654, "THR-CG2" => -0.2438, "THR-H" => 0.2719, "THR-HA" => 0.1007, "THR-HB" => 0.0043, "THR-HG1" => 0.4102, "THR-HG21" => 0.0642, "THR-HG22" => 0.0642, "THR-HG23" => 0.0642, "THR-N" => -0.4157, "THR-O" => -0.5679, "THR-OG1" => -0.6761,
         "TRP-C" => 0.5973, "TRP-CA" => -0.0275, "TRP-CB" => -0.005, "TRP-CD1" => -0.1638, "TRP-CD2" => 0.1243, "TRP-CE2" => 0.138, "TRP-CE3" => -0.2387, "TRP-CG" => -0.1415, "TRP-CH2" => -0.1134, "TRP-CZ2" => -0.2601, "TRP-CZ3" => -0.1972, "TRP-H" => 0.2719, "TRP-HA" => 0.1123, "TRP-HB2" => 0.0339, "TRP-HB3" => 0.0339, "TRP-HD1" => 0.2062, "TRP-HE1" => 0.3412, "TRP-HE3" => 0.17, "TRP-HH2" => 0.1417, "TRP-HZ2" => 0.1572, "TRP-HZ3" => 0.1447, "TRP-N" => -0.4157, "TRP-NE1" => -0.3418, "TRP-O" => -0.5679,
         "TYR-C" => 0.5973, "TYR-CA" => -0.0014, "TYR-CB" => -0.0152, "TYR-CD1" => -0.1906, "TYR-CD2" => -0.1906, "TYR-CE1" => -0.2341, "TYR-CE2" => -0.2341, "TYR-CG" => -0.0011, "TYR-CZ" => 0.3226, "TYR-H" => 0.2719, "TYR-HA" => 0.0876, "TYR-HB2" => 0.0295, "TYR-HB3" => 0.0295, "TYR-HD1" => 0.1699, "TYR-HD2" => 0.1699, "TYR-HE1" => 0.1656, "TYR-HE2" => 0.1656, "TYR-HH" => 0.3992, "TYR-N" => -0.4157, "TYR-O" => -0.5679, "TYR-OH" => -0.5579,
-        "VAL-C" => 0.5973, "VAL-CA" => -0.0875, "VAL-CB" => 0.2985, "VAL-CG1" => -0.3192, "VAL-CG2" => -0.3192, "VAL-H" => 0.2719, "VAL-HA" => 0.0969, "VAL-HB" => -0.0297, "VAL-HG11" => 0.0791, "VAL-HG12" => 0.0791, "VAL-HG13" => 0.0791, "VAL-HG21" => 0.0791, "VAL-HG22" => 0.0791, "VAL-HG23" => 0.0791, "VAL-N" => -0.4157, "VAL-O" => -0.5679];
+        "VAL-C" => 0.5973, "VAL-CA" => -0.0875, "VAL-CB" => 0.2985, "VAL-CG1" => -0.3192, "VAL-CG2" => -0.3192, "VAL-H" => 0.2719, "VAL-HA" => 0.0969, "VAL-HB" => -0.0297, "VAL-HG11" => 0.0791, "VAL-HG12" => 0.0791, "VAL-HG13" => 0.0791, "VAL-HG21" => 0.0791, "VAL-HG22" => 0.0791, "VAL-HG23" => 0.0791, "VAL-N" => -0.4157, "VAL-O" => -0.5679,
+        "*-C" => 0.5973, "*-H" => 0.2719, "*-N" => -0.4157, "*-O" => -0.5679, "*-S" => -0.2737];
 
     static ref NT_ELE_CHARGES: HashMap<&'static str, f64> = hashmap![
         "ACE-C" => 0.5972, "ACE-CH3" => -0.3662, "ACE-HH31" => 0.1123, "ACE-HH32" => 0.1123, "ACE-HH33" => 0.1123, "ACE-O" => -0.5679,
@@ -308,7 +310,16 @@ impl<'a> PYDOCKDockingModel {
                                     _ => panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id),
                                 }
                             } else {
-                                panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id);
+                                println!("PYDOCK Warning: Atom [{:?}] not supported, trying generic", atom_id);
+                                let atom_element = match atom_name.chars().nth(0) {
+                                    Some(element) => element,
+                                    _ => panic!("PYDOCK Error: Atom element could not be guessed from [{:?}]", atom_name),
+                                };
+                                atom_id = format!("*-{}", atom_element);
+                                match AMBER_TYPES.get(&*atom_id) {
+                                    Some(&amber) => amber,
+                                    _ => panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id),
+                                }
                             }
                         },
                     };
@@ -342,6 +353,7 @@ impl<'a> PYDOCKDockingModel {
                 }
             }
         }
+        println!("Atoms read: {}", atom_index);
         model
     }
 }
