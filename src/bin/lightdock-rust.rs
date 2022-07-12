@@ -17,7 +17,6 @@ use std::io::{Read, BufReader};
 use std::path::Path;
 use std::collections::HashMap;
 use std::thread;
-use lib3dmol::parser;
 use npy::NpyData;
 
 // Use 8MB as binary stack
@@ -118,7 +117,10 @@ fn run() {
             // Load setup
             let setup = read_setup_from_file(setup_filename).unwrap();
 
-            simulate(&setup, swarm_filename, steps, method);
+            // Simulation path
+            let simulation_path = Path::new(setup_filename).parent().unwrap();
+
+            simulate(simulation_path.to_str().unwrap(), &setup, swarm_filename, steps, method);
         }
         _ => {
             println!("Wrong command line. Usage: {} setup_filename swarm_filename steps method", args[0]);
@@ -126,7 +128,7 @@ fn run() {
     }
 }
 
-fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method) {
+fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method) {
 
     let seed:u64 = match setup.seed {
         Some(seed) => {
@@ -141,14 +143,14 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
     let positions = parse_input_coordinates(swarm_filename);
 
     // Parse receptor input PDB structure
-    let receptor_filename: String = format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb);
+    let receptor_filename: String = format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb);
     println!("Reading receptor input structure: {}", receptor_filename);
-    let receptor = parser::read_pdb(&receptor_filename, "receptor");
+    let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Medium).unwrap();
 
     // Parse ligand input PDB structure
-    let ligand_filename: String = format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb);
+    let ligand_filename: String = format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb);
     println!("Reading ligand input structure: {}", ligand_filename);
-    let ligand = parser::read_pdb(&ligand_filename, "ligand");
+    let (ligand, _errors) = pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Medium).unwrap();
 
     // Read ANM data if activated
     let mut rec_nm: Vec<f64> = Vec::new();
@@ -158,7 +160,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
         if setup.anm_rec > 0 {
             std::fs::File::open(DEFAULT_REC_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
             rec_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-            if rec_nm.len() != receptor.get_atom_number() as usize * 3 * setup.anm_rec {
+            if rec_nm.len() != receptor.atom_count() as usize * 3 * setup.anm_rec {
                 panic!("Number of read ANM in receptor does not correspond to the number of atoms");
             }
         }
@@ -166,7 +168,7 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
             buf = vec![];
             std::fs::File::open(DEFAULT_LIG_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
             lig_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-            if lig_nm.len() != ligand.get_atom_number() as usize * 3 * setup.anm_lig {
+            if lig_nm.len() != ligand.atom_count() as usize * 3 * setup.anm_lig {
                 panic!("Number of read ANM in ligand does not correspond to the number of atoms");
             }
         }

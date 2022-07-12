@@ -1,8 +1,8 @@
-use lib3dmol::structures::Structure;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::env;
+use pdbtbx::PDB;
 use super::qt::Quaternion;
 use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
 use super::scoring::{Score, satisfied_restraints, membrane_intersection};
@@ -108,7 +108,7 @@ pub struct DFIREDockingModel {
 
 impl<'a> DFIREDockingModel {
 
-    fn new(structure: &'a Structure, active_restraints: &'a [String], passive_restraints: &'a [String],
+    fn new(structure: &'a PDB, active_restraints: &'a [String], passive_restraints: &'a [String],
         nmodes: &[f64], num_anm: usize) -> DFIREDockingModel {
         let mut model = DFIREDockingModel {
             atoms: Vec::new(),
@@ -121,16 +121,20 @@ impl<'a> DFIREDockingModel {
         };
 
         let mut atom_index: u64 = 0;
-        for chain in structure.chains.iter() {
-            for residue in chain.lst_res.iter() {
-                let mut res_id = format!("{}.{}.{}", chain.name, residue.name.trim(), residue.res_num);
-                if let Some(c) = residue.res_icode {
-                    res_id.push(c);
+        for chain in structure.chains() {
+            for residue in chain.residues() {
+                let res_name = match residue.name() {
+                    Some(name) => name,
+                    None => panic!("PDB Parsing Error: Residue name error"),
+                };
+                let mut res_id = format!("{}.{}.{}", chain.id(), res_name, residue.serial_number());
+                if let Some(c) = residue.insertion_code() {
+                    res_id.push_str(c);
                 }
 
-                for atom in residue.lst_atom.iter() {
+                for atom in residue.atoms() {
                     // Membrane beads MMB.BJ
-                    let rec_atom_type = format!("{}{}", residue.name.trim(), atom.name.trim());
+                    let rec_atom_type = format!("{}{}", res_name, atom.name());
                     if rec_atom_type == "MMBBJ" {
                         model.membrane.push(atom_index as usize);
                     }
@@ -157,14 +161,14 @@ impl<'a> DFIREDockingModel {
                         }
                     }
 
-                    let rnuma = r3_to_numerical(residue.name.trim());
+                    let rnuma = r3_to_numerical(res_name);
                     let anuma = match ATOMNUMBER.get(&rec_atom_type[..]) {
                         Some(&a) => a as usize,
                         _ => panic!("Not supported atom type {:?}", rec_atom_type),
                     };
                     let atoma = ATOMRES[rnuma][anuma];
                     model.atoms.push(atoma);
-                    model.coordinates.push([atom.coord[0] as f64, atom.coord[1] as f64, atom.coord[2] as f64]);
+                    model.coordinates.push([atom.x(), atom.y(), atom.z()]);
                     atom_index += 1;
                 }
             }
@@ -183,9 +187,9 @@ pub struct DFIRE {
 
 impl<'a> DFIRE {
 
-    pub fn new(receptor: Structure, rec_active_restraints: Vec<String>, rec_passive_restraints: Vec<String>,
+    pub fn new(receptor: PDB, rec_active_restraints: Vec<String>, rec_passive_restraints: Vec<String>,
             rec_nmodes: Vec<f64>, rec_num_anm: usize,
-            ligand: Structure, lig_active_restraints: Vec<String>, lig_passive_restraints: Vec<String>,
+            ligand: PDB, lig_active_restraints: Vec<String>, lig_passive_restraints: Vec<String>,
             lig_nmodes: Vec<f64>, lig_num_anm: usize, use_anm: bool) -> Box<dyn Score + 'a> {
         let mut d = DFIRE {
             potential: Vec::with_capacity(168 * 168 * 20),
@@ -313,7 +317,6 @@ impl<'a> Score for DFIRE {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lib3dmol::parser;
     use crate::qt::Quaternion;
 
     // #[test]
@@ -337,12 +340,13 @@ mod tests {
         let test_path: String = format!("{}/tests/2oob", cargo_path);
 
         let receptor_filename: String = format!("{}/2oob_receptor.pdb", test_path);
-        let receptor = parser::read_pdb(&receptor_filename, "receptor");
+        let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
         let ligand_filename: String = format!("{}/2oob_ligand.pdb", test_path);
-        let ligand = parser::read_pdb(&ligand_filename, "ligand");
+        let (ligand, _errors) = pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
-        let scoring = DFIRE::new(receptor, Vec::new(), Vec::new(), Vec::new(), 0, ligand, Vec::new(), Vec::new(), Vec::new(), 0, false);
+        let scoring = DFIRE::new(receptor, Vec::new(), Vec::new(), Vec::new(), 0,
+                                 ligand, Vec::new(), Vec::new(), Vec::new(), 0, false);
 
         let translation = vec![0., 0., 0.];
         let rotation = Quaternion::default();
