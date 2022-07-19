@@ -38,6 +38,7 @@ pub fn r3_to_numerical(residue_name: &str) -> usize {
         "TRP" => {18}
         "TYR" => {19}
         "MMB" => {20}
+        "MMY" => {0}
         _ => { panic!("Residue name not supported in DFIRE scoring function") }
     }
 }
@@ -45,7 +46,7 @@ pub fn r3_to_numerical(residue_name: &str) -> usize {
 // DFIRE only uses 20 distance bins
 const DIST_TO_BINS: &[usize] = &[1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 15,
                                  16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
-                                 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31];
+                                 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 32];
 
 lazy_static! {
     static ref ATOMNUMBER: HashMap<&'static str, usize> = hashmap![
@@ -69,7 +70,7 @@ lazy_static! {
         "VALN" => 0, "VALCA" => 1, "VALC" => 2, "VALO" => 3, "VALCB" => 4, "VALCG1" => 5, "VALCG2" => 6,
         "TRPN" => 0, "TRPCA" => 1, "TRPC" => 2, "TRPO" => 3, "TRPCB" => 4, "TRPCG" => 5, "TRPCD1" => 6, "TRPCD2" => 7, "TRPCE2" => 8, "TRPNE1" => 9, "TRPCE3" => 10, "TRPCZ3" => 11, "TRPCH2" => 12, "TRPCZ2" => 13,
         "TYRN" => 0, "TYRCA" => 1, "TYRC" => 2, "TYRO" => 3, "TYRCB" => 4, "TYRCG" => 5, "TYRCD1" => 6, "TYRCD2" => 7, "TYRCE1" => 8, "TYRCE2" => 9, "TYRCZ" => 10, "TYROH" => 11,
-        "MMBBJ" => 0];
+        "MMBBJ" => 0, "MMYDU" => 0];
 
     // Atom type and residue translation matrix
     static ref ATOMRES: Vec<Vec<usize>> = vec![vec![74, 75, 76, 77, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -92,7 +93,8 @@ lazy_static! {
                                                vec![41, 42, 43, 44, 45, 46, 47, 0, 0, 0, 0, 0, 0, 0],
                                                vec![48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
                                                vec![62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 0, 0],
-                                               vec![167, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+                                               vec![167, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                               vec![74, 75, 76, 77, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
 }
 
 
@@ -192,7 +194,7 @@ impl<'a> DFIRE {
             ligand: PDB, lig_active_restraints: Vec<String>, lig_passive_restraints: Vec<String>,
             lig_nmodes: Vec<f64>, lig_num_anm: usize, use_anm: bool) -> Box<dyn Score + 'a> {
         let mut d = DFIRE {
-            potential: Vec::with_capacity(168 * 168 * 20),
+            potential: Vec::with_capacity(169 * 169 * 20),
             receptor: DFIREDockingModel::new(&receptor, &rec_active_restraints, &rec_passive_restraints, &rec_nmodes, rec_num_anm),
             ligand: DFIREDockingModel::new(&ligand, &lig_active_restraints, &lig_passive_restraints, &lig_nmodes, lig_num_anm),
             use_anm,
@@ -217,13 +219,13 @@ impl<'a> DFIRE {
         let split = raw_parameters.lines();
         let params: Vec<&str> = split.collect();
 
-        for param in params.iter().take(168*168*20) {
+        for param in params.iter().take(169*169*20) {
             self.potential.push(param.trim().parse::<f64>().unwrap());
         }
     }
 
     pub fn get_potential(&mut self, x: usize, y: usize, z: usize) -> f64 {
-        self.potential[x + 168 * (y + 20 * z)]
+        self.potential[x + 169 * (y + 20 * z)]
     }
 }
 
@@ -287,7 +289,7 @@ impl<'a> Score for DFIRE {
                     let atomb = self.ligand.atoms[j];
                     let d = dist.sqrt()*2.0 - 1.0;
                     let dfire_bin = DIST_TO_BINS[d as usize] - 1;
-                    score += self.potential[atoma*168*20 + atomb*20 + dfire_bin];
+                    score += self.potential[atoma*169*20 + atomb*20 + dfire_bin];
                     if d <= INTERFACE_CUTOFF {
                         interface_receptor[i] = 1;
                         interface_ligand[j] = 1;
