@@ -4,6 +4,9 @@ use super::qt::Quaternion;
 use super::constants::{INTERFACE_CUTOFF2, MEMBRANE_PENALTY_SCORE};
 use super::scoring::{Score, satisfied_restraints, membrane_intersection};
 
+use log::{warn, info};
+
+
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = ::std::collections::HashMap::new();
@@ -314,7 +317,7 @@ impl<'a> PYDOCKDockingModel {
                                     _ => panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id),
                                 }
                             } else {
-                                println!("PYDOCK Warning: Atom [{:?}] not supported, trying generic", atom_id);
+                                warn!("PYDOCK Warning: Atom [{:?}] not supported, trying generic", atom_id);
                                 let atom_element = match atom_name.chars().nth(0) {
                                     Some(element) => element,
                                     _ => panic!("PYDOCK Error: Atom element could not be guessed from [{:?}]", atom_name),
@@ -357,7 +360,7 @@ impl<'a> PYDOCKDockingModel {
                 }
             }
         }
-        println!("Atoms read: {}", atom_index);
+        info!("Atoms read: {}", atom_index);
         model
     }
 }

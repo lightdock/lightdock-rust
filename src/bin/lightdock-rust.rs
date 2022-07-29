@@ -85,6 +85,7 @@ fn main() {
 }
 
 fn run() {
+    env_logger::init();
     // Parse command line
     let args: Vec<String> = env::args().collect();
     match args.len() {
