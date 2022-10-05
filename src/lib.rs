@@ -10,11 +10,13 @@ pub mod constants;
 pub mod scoring;
 pub mod dfire;
 pub mod dna;
+pub mod pydock;
 
 use swarm::Swarm;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use scoring::Score;
+use log::info;
 
 
 pub struct GSO<'a> {
@@ -36,7 +38,7 @@ impl<'a> GSO<'a> {
 
     pub fn run(&mut self, steps: u32) {
         for step in 1..steps+1 {
-            println!("Step {}", step);
+            info!("Step {}", step);
             self.swarm.update_luciferin();
             self.swarm.movement_phase(&mut self.rng);
             if step % 10 == 0 || step == 1 {
