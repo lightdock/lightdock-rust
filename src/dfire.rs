@@ -38,7 +38,7 @@ pub fn r3_to_numerical(residue_name: &str) -> usize {
         "TRP" => {18}
         "TYR" => {19}
         "MMB" => {20}
-        "MMY" => {0}
+        "MMY" => {21}
         _ => { panic!("Residue name not supported in DFIRE scoring function") }
     }
 }
@@ -94,7 +94,7 @@ lazy_static! {
                                                vec![48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
                                                vec![62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 0, 0],
                                                vec![167, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                               vec![74, 75, 76, 77, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+                                               vec![168, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
 }
 
 
