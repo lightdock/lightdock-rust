@@ -20,15 +20,17 @@ use scoring::Score;
 pub struct GSO<'a> {
     pub swarm: Swarm<'a>,
     pub rng: StdRng,
+    pub output_directory: String
 }
 
 
 impl<'a> GSO<'a> {
     pub fn new(positions: &[Vec<f64>], seed: u64, scoring: &'a Box<dyn Score>, use_anm: bool,
-        rec_num_anm: usize, lig_num_anm: usize) -> Self {
+        rec_num_anm: usize, lig_num_anm: usize, output_directory: String) -> Self {
         let mut gso = GSO {
             swarm: Swarm::new(),
             rng: SeedableRng::seed_from_u64(seed),
+            output_directory
         };
         gso.swarm.add_glowworms(positions, scoring, use_anm, rec_num_anm, lig_num_anm);
         gso
@@ -40,7 +42,7 @@ impl<'a> GSO<'a> {
             self.swarm.update_luciferin();
             self.swarm.movement_phase(&mut self.rng);
             if step % 10 == 0 || step == 1 {
-                match self.swarm.save(step) {
+                match self.swarm.save(step, &self.output_directory) {
                     Ok(ok) => ok,
                     Err(why) => panic!("Error saving GSO output: {:?}", why),
                 }

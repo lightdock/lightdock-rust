@@ -112,8 +112,8 @@ impl<'a> Swarm<'a> {
         }
     }
 
-    pub fn save(&mut self, step: u32) -> Result<(), Error> {
-        let path = format!("gso_{:?}.out", step);
+    pub fn save(&mut self, step: u32, output_directory: &str) -> Result<(), Error> {
+        let path = format!("{}/gso_{:?}.out", output_directory, step);
         let mut output = File::create(path)?;
         writeln!(output, "#Coordinates  RecID  LigID  Luciferin  Neighbor's number  Vision Range  Scoring")?;
         for glowworm in self.glowworms.iter() {
