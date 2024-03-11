@@ -124,9 +124,10 @@ fn run() {
     }
 }
 
-fn parse_swarm_id(filename: &str) -> Option<i32> {
-    filename
-        .strip_prefix("initial_positions_")
+fn parse_swarm_id(path: &Path) -> Option<i32> {
+    path.file_name()
+        .and_then(|s| s.to_str())
+        .and_then(|s| s.strip_prefix("initial_positions_"))
         .and_then(|s| s.strip_suffix(".dat"))
         .and_then(|s| s.parse::<i32>().ok())
 }
@@ -143,7 +144,8 @@ fn simulate(setup: &SetupFile, swarm_filename: &str, steps: u32, method: Method)
     };
 
     println!("Reading starting positions from {:?}", swarm_filename);
-    let swarm_id = parse_swarm_id(swarm_filename).expect("Could not parse swarm from swarm filename");
+    let file_path = Path::new(swarm_filename);
+    let swarm_id = parse_swarm_id(file_path).expect("Could not parse swarm from swarm filename");
     println!("Swarm ID {:?}", swarm_id);
     let swarm_directory = format!("swarm_{}", swarm_id);
 
