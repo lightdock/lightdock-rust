@@ -6,6 +6,7 @@ use super::qt::Quaternion;
 pub enum Method {
     DFIRE,
     DNA,
+    PYDOCK,
 }
 
 pub trait Score {
