@@ -165,7 +165,7 @@ impl<'a> DFIREDockingModel {
 
                     let rnuma = r3_to_numerical(res_name);
                     let anuma = match ATOMNUMBER.get(&rec_atom_type[..]) {
-                        Some(&a) => a as usize,
+                        Some(&a) => a,
                         _ => panic!("Not supported atom type {:?}", rec_atom_type),
                     };
                     let atoma = ATOMRES[rnuma][anuma];

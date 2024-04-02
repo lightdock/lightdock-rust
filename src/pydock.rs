@@ -344,12 +344,12 @@ impl<'a> PYDOCKDockingModel {
                     model.ele_charges.push(ele_charge);
 
                     // Assign VDW charge and radius
-                    let vdw_charge = match VDW_CHARGES.get(&*amber_type) {
+                    let vdw_charge = match VDW_CHARGES.get(amber_type) {
                         Some(&charge) => charge,
                         _ => panic!("PYDOCK Error: Atom [{:?}] VDW charge not found", atom_id),
                     };
                     model.vdw_charges.push(vdw_charge);
-                    let vdw_radius = match VDW_RADII.get(&*amber_type) {
+                    let vdw_radius = match VDW_RADII.get(amber_type) {
                         Some(&radius) => radius,
                         _ => panic!("PYDOCK Error: Atom [{:?}] VDW radius not found", atom_id),
                     };
