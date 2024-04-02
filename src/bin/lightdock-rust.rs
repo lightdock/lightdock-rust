@@ -1,6 +1,6 @@
 extern crate serde;
 extern crate serde_json;
-extern crate npy;
+extern crate npyz;
 
 use lightdock::GSO;
 use lightdock::constants::{DEFAULT_LIGHTDOCK_PREFIX, DEFAULT_SEED, DEFAULT_REC_NM_FILE, DEFAULT_LIG_NM_FILE};
@@ -17,7 +17,7 @@ use std::io::{Read, BufReader};
 use std::path::Path;
 use std::collections::HashMap;
 use std::thread;
-use npy::NpyData;
+use npyz::NpyData;
 
 // Use 8MB as binary stack
 const STACK_SIZE: usize = 8 * 1024 * 1024;
@@ -161,7 +161,7 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
         if setup.anm_rec > 0 {
             std::fs::File::open(DEFAULT_REC_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
             rec_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-            if rec_nm.len() != receptor.atom_count() as usize * 3 * setup.anm_rec {
+            if rec_nm.len() != receptor.atom_count() * 3 * setup.anm_rec {
                 panic!("Number of read ANM in receptor does not correspond to the number of atoms");
             }
         }
@@ -169,7 +169,7 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
             buf = vec![];
             std::fs::File::open(DEFAULT_LIG_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
             lig_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
-            if lig_nm.len() != ligand.atom_count() as usize * 3 * setup.anm_lig {
+            if lig_nm.len() != ligand.atom_count() * 3 * setup.anm_lig {
                 panic!("Number of read ANM in ligand does not correspond to the number of atoms");
             }
         }
