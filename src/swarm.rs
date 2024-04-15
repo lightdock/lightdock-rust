@@ -35,14 +35,14 @@ impl<'a> Swarm<'a> {
             let mut rec_nmodes: Vec<f64> = Vec::new();
             if use_anm && rec_num_anm > 0 {
                 for j in 7..7+rec_num_anm {
-                    rec_nmodes.push(positions[i][j as usize]);
+                    rec_nmodes.push(positions[i][j]);
                 }
             }
             // ANM for ligand
             let mut lig_nmodes: Vec<f64> = Vec::new();
             if use_anm && lig_num_anm > 0 {
                 for j in 7+rec_num_anm..positions[i].len() {
-                    lig_nmodes.push(positions[i][j as usize]);
+                    lig_nmodes.push(positions[i][j]);
                 }
             }
             let glowworm = Glowworm::new(i as u32, translation, rotation, rec_nmodes, lig_nmodes, scoring, use_anm);
