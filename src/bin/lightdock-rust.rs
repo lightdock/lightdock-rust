@@ -161,13 +161,21 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
     println!("Writing to swarm dir {:?}", swarm_directory);
     let positions = parse_input_coordinates(swarm_filename);
 
+    let receptor_filename = if simulation_path == "" {
+        format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb)
+    } else {
+        format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb)
+    };
     // Parse receptor input PDB structure
-    let receptor_filename: String = format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb);
     println!("Reading receptor input structure: {}", receptor_filename);
     let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Medium).unwrap();
 
+    let ligand_filename = if simulation_path == "" {
+        format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb)
+    } else {
+        format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb)
+    };
     // Parse ligand input PDB structure
-    let ligand_filename: String = format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb);
     println!("Reading ligand input structure: {}", ligand_filename);
     let (ligand, _errors) = pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Medium).unwrap();
 
