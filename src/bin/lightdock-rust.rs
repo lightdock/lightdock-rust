@@ -13,11 +13,11 @@ use std::fs;
 use serde::{Serialize, Deserialize};
 use std::error::Error;
 use std::fs::File;
-use std::io::{Read, BufReader};
+use std::io::BufReader;
 use std::path::Path;
 use std::collections::HashMap;
 use std::thread;
-use npyz::NpyData;
+use npyz::NpyFile;
 
 // Use 8MB as binary stack
 const STACK_SIZE: usize = 8 * 1024 * 1024;
@@ -161,7 +161,7 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
     println!("Writing to swarm dir {:?}", swarm_directory);
     let positions = parse_input_coordinates(swarm_filename);
 
-    let receptor_filename = if simulation_path == "" {
+    let receptor_filename = if simulation_path.is_empty() {
         format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb)
     } else {
         format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.receptor_pdb)
@@ -170,7 +170,7 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
     println!("Reading receptor input structure: {}", receptor_filename);
     let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Medium).unwrap();
 
-    let ligand_filename = if simulation_path == "" {
+    let ligand_filename = if simulation_path.is_empty() {
         format!("{}{}", DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb)
     } else {
         format!("{}/{}{}", simulation_path, DEFAULT_LIGHTDOCK_PREFIX, setup.ligand_pdb)
@@ -183,18 +183,28 @@ fn simulate(simulation_path: &str, setup: &SetupFile, swarm_filename: &str, step
     let mut rec_nm: Vec<f64> = Vec::new();
     let mut lig_nm: Vec<f64> = Vec::new();
     if setup.use_anm {
-        let mut buf = vec![];
         if setup.anm_rec > 0 {
-            std::fs::File::open(DEFAULT_REC_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
-            rec_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
+            let bytes = match std::fs::read(DEFAULT_REC_NM_FILE) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    panic!("Error reading receptor ANM file [{:?}]: {:?}", DEFAULT_REC_NM_FILE, e.to_string());
+                }
+            };
+            let reader = NpyFile::new(&bytes[..]).unwrap();
+            rec_nm = reader.into_vec::<f64>().unwrap();
             if rec_nm.len() != receptor.atom_count() * 3 * setup.anm_rec {
                 panic!("Number of read ANM in receptor does not correspond to the number of atoms");
             }
         }
         if setup.anm_lig > 0 {
-            buf = vec![];
-            std::fs::File::open(DEFAULT_LIG_NM_FILE).unwrap().read_to_end(&mut buf).unwrap();
-            lig_nm = NpyData::from_bytes(&buf).unwrap().to_vec();
+            let bytes = match std::fs::read(DEFAULT_LIG_NM_FILE) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    panic!("Error reading ligand ANM file [{:?}]: {:?}", DEFAULT_LIG_NM_FILE, e.to_string());
+                }
+            };
+            let reader = NpyFile::new(&bytes[..]).unwrap();
+            lig_nm = reader.into_vec::<f64>().unwrap();
             if lig_nm.len() != ligand.atom_count() * 3 * setup.anm_lig {
                 panic!("Number of read ANM in ligand does not correspond to the number of atoms");
             }
