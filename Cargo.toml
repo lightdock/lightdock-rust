@@ -3,6 +3,9 @@ name = "lightdock"
 version = "0.3.1"
 authors = ["Brian Jimenez Garcia <br.jimenezgarcia@gmail.com>"]
 edition = "2021"
+license = "GPL-3.0-only"
+description = "Macromolecular docking software based on the GSO algorithm"
+homepage = "https://lightdock.org"
 
 [dependencies]
 rand = "0.7.3"
