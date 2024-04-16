@@ -374,7 +374,7 @@ impl<'a> DNA {
     }
 }
 
-impl<'a> Score for DNA {
+impl Score for DNA {
 
     fn energy(&self, translation: &[f64], rotation: &Quaternion,
         rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {

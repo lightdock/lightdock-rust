@@ -229,7 +229,7 @@ impl<'a> DFIRE {
     }
 }
 
-impl<'a> Score for DFIRE {
+impl Score for DFIRE {
 
     fn energy(&self, translation: &[f64], rotation: &Quaternion,
         rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {

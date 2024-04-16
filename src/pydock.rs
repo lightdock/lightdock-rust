@@ -387,7 +387,7 @@ impl<'a> PYDOCK {
     }
 }
 
-impl<'a> Score for PYDOCK {
+impl Score for PYDOCK {
 
     fn energy(&self, translation: &[f64], rotation: &Quaternion,
         rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
