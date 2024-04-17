@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-use pdbtbx::PDB;
-use super::qt::Quaternion;
 use super::constants::{INTERFACE_CUTOFF2, MEMBRANE_PENALTY_SCORE};
-use super::scoring::{Score, satisfied_restraints, membrane_intersection};
+use super::qt::Quaternion;
+use super::scoring::{membrane_intersection, satisfied_restraints, Score};
+use pdbtbx::PDB;
+use std::collections::HashMap;
 
-use log::{warn, info};
-
+use log::{info, warn};
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
@@ -21,36 +20,46 @@ const MAX_ES_CUTOFF: f64 = 1.0;
 const MIN_ES_CUTOFF: f64 = -1.0;
 const VDW_CUTOFF: f64 = 1.0;
 const ELEC_DIST_CUTOFF: f64 = 30.0;
-const ELEC_DIST_CUTOFF2: f64 = ELEC_DIST_CUTOFF*ELEC_DIST_CUTOFF;
+const ELEC_DIST_CUTOFF2: f64 = ELEC_DIST_CUTOFF * ELEC_DIST_CUTOFF;
 const VDW_DIST_CUTOFF: f64 = 10.0;
-const VDW_DIST_CUTOFF2: f64 = VDW_DIST_CUTOFF*VDW_DIST_CUTOFF;
-const ELEC_MAX_CUTOFF: f64 = MAX_ES_CUTOFF*EPSILON/FACTOR;
-const ELEC_MIN_CUTOFF: f64 = MIN_ES_CUTOFF*EPSILON/FACTOR;
+const VDW_DIST_CUTOFF2: f64 = VDW_DIST_CUTOFF * VDW_DIST_CUTOFF;
+const ELEC_MAX_CUTOFF: f64 = MAX_ES_CUTOFF * EPSILON / FACTOR;
+const ELEC_MIN_CUTOFF: f64 = MIN_ES_CUTOFF * EPSILON / FACTOR;
 
 pub fn atoms_in_residues(residue_name: &str) -> &'static [&'static str] {
-       match residue_name {
-        "ALA" => { &["N", "CA", "C", "O", "CB"] }
-        "CYS" => { &["N", "CA", "C", "O", "CB", "SG"] }
-        "ASP" => { &["N", "CA", "C", "O", "CB", "CG", "OD1", "OD2"] }
-        "GLU" => { &["N", "CA", "C", "O", "CB", "CG", "CD", "OE1", "OE2"] }
-        "PHE" => { &["N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE1", "CE2", "CZ"] }
-        "GLY" => { &["N", "CA", "C", "O"] }
-        "HIS" => { &["N", "CA", "C", "O", "CB", "CG", "ND1", "CD2", "CE1", "NE2"] }
-        "ILE" => { &["N", "CA", "C", "O", "CB", "CG1", "CG2", "CD1"] }
-        "LYS" => { &["N", "CA", "C", "O", "CB", "CG", "CD", "CE", "NZ"] }
-        "LEU" => { &["N", "CA", "C", "O", "CB", "CG", "CD1", "CD2"] }
-        "MET" => { &["N", "CA", "C", "O", "CB", "CG", "SD", "CE"] }
-        "ASN" => { &["N", "CA", "C", "O", "CB", "CG", "OD1", "ND2"] }
-        "PRO" => { &["N", "CA", "C", "O", "CB", "CG", "CD"] }
-        "GLN" => { &["N", "CA", "C", "O", "CB", "CG", "CD", "OE1", "NE2"] }
-        "ARG" => { &["N", "CA", "C", "O", "CB", "CG", "CD", "NE", "CZ", "NH1", "NH2"] }
-        "SER" => { &["N", "CA", "C", "O", "CB", "OG"] }
-        "THR" => { &["N", "CA", "C", "O", "CB", "OG1", "CG2"] }
-        "VAL" => { &["N", "CA", "C", "O", "CB", "CG1", "CG2"] }
-        "TRP" => { &["N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE2", "NE1", "CE3", "CZ3", "CH2", "CZ2"] }
-        "TYR" => { &["N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE1", "CE2", "CZ", "OH"] }
-        "MMB" => { &["BJ"] }
-        _ => { panic!("Residue name not supported in PYDOCK scoring function") }
+    match residue_name {
+        "ALA" => &["N", "CA", "C", "O", "CB"],
+        "CYS" => &["N", "CA", "C", "O", "CB", "SG"],
+        "ASP" => &["N", "CA", "C", "O", "CB", "CG", "OD1", "OD2"],
+        "GLU" => &["N", "CA", "C", "O", "CB", "CG", "CD", "OE1", "OE2"],
+        "PHE" => &[
+            "N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE1", "CE2", "CZ",
+        ],
+        "GLY" => &["N", "CA", "C", "O"],
+        "HIS" => &["N", "CA", "C", "O", "CB", "CG", "ND1", "CD2", "CE1", "NE2"],
+        "ILE" => &["N", "CA", "C", "O", "CB", "CG1", "CG2", "CD1"],
+        "LYS" => &["N", "CA", "C", "O", "CB", "CG", "CD", "CE", "NZ"],
+        "LEU" => &["N", "CA", "C", "O", "CB", "CG", "CD1", "CD2"],
+        "MET" => &["N", "CA", "C", "O", "CB", "CG", "SD", "CE"],
+        "ASN" => &["N", "CA", "C", "O", "CB", "CG", "OD1", "ND2"],
+        "PRO" => &["N", "CA", "C", "O", "CB", "CG", "CD"],
+        "GLN" => &["N", "CA", "C", "O", "CB", "CG", "CD", "OE1", "NE2"],
+        "ARG" => &[
+            "N", "CA", "C", "O", "CB", "CG", "CD", "NE", "CZ", "NH1", "NH2",
+        ],
+        "SER" => &["N", "CA", "C", "O", "CB", "OG"],
+        "THR" => &["N", "CA", "C", "O", "CB", "OG1", "CG2"],
+        "VAL" => &["N", "CA", "C", "O", "CB", "CG1", "CG2"],
+        "TRP" => &[
+            "N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE2", "NE1", "CE3", "CZ3", "CH2", "CZ2",
+        ],
+        "TYR" => &[
+            "N", "CA", "C", "O", "CB", "CG", "CD1", "CD2", "CE1", "CE2", "CZ", "OH",
+        ],
+        "MMB" => &["BJ"],
+        _ => {
+            panic!("Residue name not supported in PYDOCK scoring function")
+        }
     }
 }
 
@@ -64,7 +73,6 @@ lazy_static! {
         "P" => 0.2, "S" => 0.25, "CR" => 0.086, "N2" => 0.17, "N3" => 0.17, "CW" => 0.086, "CV" => 0.086, "CT" => 0.1094,
         "MG" => 0.8947, "OH" => 0.2104, "H2" => 0.0157, "H3" => 0.0157, "H1" => 0.0157, "H4" => 0.015, "H5" => 0.015,
         "SH" => 0.25, "OW" => 0.152, "OS" => 0.17];
-
     static ref VDW_RADII: HashMap<&'static str, f64> = hashmap![
         "IP" => 1.868, "HS" => 0.6, "HP" => 1.1, "Na" => 1.868, "N*" => 1.824, "Li" => 1.137, "HO" => 0.0001,
         "Rb" => 2.956, "HC" => 1.487, "HA" => 1.459, "O3" => 1.6612, "CQ" => 1.908, "C*" => 1.908,
@@ -74,10 +82,8 @@ lazy_static! {
         "Zn" => 1.1, "O" => 1.6612, "N" => 1.824, "P" => 2.1, "S" => 2.0, "CR" => 1.908, "N2" => 1.824,
         "N3" => 1.875, "CW" => 1.908, "CV" => 1.908, "CT" => 1.908, "MG" => 0.7926, "OH" => 1.721, "H2" => 1.287,
         "H3" => 1.187, "H1" => 1.387, "H4" => 1.409, "H5" => 1.359, "SH" => 2.0, "OW" => 1.7683, "OS" => 1.6837];
-
     static ref RES_TO_TRANSLATE: HashMap<&'static str, &'static str> = hashmap![
         "HIS" => "HID", "THY" => "DT", "ADE" => "DA", "CYT" => "DC", "GUA" => "DG"];
-
     static ref AMBER_TYPES: HashMap<&'static str, &'static str> = hashmap![
         "ALA-C" => "C", "ALA-CA" => "CT", "ALA-CB" => "CT", "ALA-H" => "H", "ALA-HA" => "H1", "ALA-HB1" => "HC", "ALA-HB2" => "HC", "ALA-HB3" => "HC", "ALA-N" => "N", "ALA-O" => "O",
         "ARG-C" => "C", "ARG-CA" => "CT", "ARG-CB" => "CT", "ARG-CD" => "CT", "ARG-CG" => "CT", "ARG-CZ" => "CA", "ARG-H" => "H", "ARG-HA" => "H1", "ARG-HB2" => "HC", "ARG-HB3" => "HC", "ARG-HD2" => "H1", "ARG-HD3" => "H1", "ARG-HE" => "H", "ARG-HG2" => "HC", "ARG-HG3" => "HC", "ARG-HH11" => "H", "ARG-HH12" => "H", "ARG-HH21" => "H", "ARG-HH22" => "H", "ARG-N" => "N", "ARG-NE" => "N2", "ARG-NH1" => "N2", "ARG-NH2" => "N2", "ARG-O" => "O",
@@ -140,7 +146,6 @@ lazy_static! {
         "TYR-C" => "C", "TYR-CA" => "CT", "TYR-CB" => "CT", "TYR-CD1" => "CA", "TYR-CD2" => "CA", "TYR-CE1" => "CA", "TYR-CE2" => "CA", "TYR-CG" => "CA", "TYR-CZ" => "C", "TYR-H" => "H", "TYR-HA" => "H1", "TYR-HB2" => "HC", "TYR-HB3" => "HC", "TYR-HD1" => "HA", "TYR-HD2" => "HA", "TYR-HE1" => "HA", "TYR-HE2" => "HA", "TYR-HH" => "HO", "TYR-N" => "N", "TYR-O" => "O", "TYR-OH" => "OH",
         "VAL-C" => "C", "VAL-CA" => "CT", "VAL-CB" => "CT", "VAL-CG1" => "CT", "VAL-CG2" => "CT", "VAL-H" => "H", "VAL-HA" => "H1", "VAL-HB" => "HC", "VAL-HG11" => "HC", "VAL-HG12" => "HC", "VAL-HG13" => "HC", "VAL-HG21" => "HC", "VAL-HG22" => "HC", "VAL-HG23" => "HC", "VAL-N" => "N", "VAL-O" => "O",
         "*-C" => "C", "*-H" => "H", "*-N" => "N", "*-O" => "O", "*-S" => "S", "*-F" => "F"];
-
     static ref ELE_CHARGES: HashMap<&'static str, f64> = hashmap![
         "ALA-C" => 0.5973, "ALA-CA" => 0.0337, "ALA-CB" => -0.1825, "ALA-H" => 0.2719, "ALA-HA" => 0.0823, "ALA-HB1" => 0.0603, "ALA-HB2" => 0.0603, "ALA-HB3" => 0.0603, "ALA-N" => -0.4157, "ALA-O" => -0.5679,
         "ARG-C" => 0.7341, "ARG-CA" => -0.2637, "ARG-CB" => -0.0007, "ARG-CD" => 0.0486, "ARG-CG" => 0.039, "ARG-CZ" => 0.8076, "ARG-H" => 0.2747, "ARG-HA" => 0.156, "ARG-HB2" => 0.0327, "ARG-HB3" => 0.0327, "ARG-HD2" => 0.0687, "ARG-HD3" => 0.0687, "ARG-HE" => 0.3456, "ARG-HG2" => 0.0285, "ARG-HG3" => 0.0285, "ARG-HH11" => 0.4478, "ARG-HH12" => 0.4478, "ARG-HH21" => 0.4478, "ARG-HH22" => 0.4478, "ARG-N" => -0.3479, "ARG-NE" => -0.5295, "ARG-NH1" => -0.8627, "ARG-NH2" => -0.8627, "ARG-O" => -0.5894,
@@ -203,7 +208,6 @@ lazy_static! {
         "TYR-C" => 0.5973, "TYR-CA" => -0.0014, "TYR-CB" => -0.0152, "TYR-CD1" => -0.1906, "TYR-CD2" => -0.1906, "TYR-CE1" => -0.2341, "TYR-CE2" => -0.2341, "TYR-CG" => -0.0011, "TYR-CZ" => 0.3226, "TYR-H" => 0.2719, "TYR-HA" => 0.0876, "TYR-HB2" => 0.0295, "TYR-HB3" => 0.0295, "TYR-HD1" => 0.1699, "TYR-HD2" => 0.1699, "TYR-HE1" => 0.1656, "TYR-HE2" => 0.1656, "TYR-HH" => 0.3992, "TYR-N" => -0.4157, "TYR-O" => -0.5679, "TYR-OH" => -0.5579,
         "VAL-C" => 0.5973, "VAL-CA" => -0.0875, "VAL-CB" => 0.2985, "VAL-CG1" => -0.3192, "VAL-CG2" => -0.3192, "VAL-H" => 0.2719, "VAL-HA" => 0.0969, "VAL-HB" => -0.0297, "VAL-HG11" => 0.0791, "VAL-HG12" => 0.0791, "VAL-HG13" => 0.0791, "VAL-HG21" => 0.0791, "VAL-HG22" => 0.0791, "VAL-HG23" => 0.0791, "VAL-N" => -0.4157, "VAL-O" => -0.5679,
         "*-C" => 0.5973, "*-H" => 0.2719, "*-N" => -0.4157, "*-O" => -0.5679, "*-S" => -0.2737, "*-F" => -0.342];
-
     static ref NT_ELE_CHARGES: HashMap<&'static str, f64> = hashmap![
         "ACE-C" => 0.5972, "ACE-CH3" => -0.3662, "ACE-HH31" => 0.1123, "ACE-HH32" => 0.1123, "ACE-HH33" => 0.1123, "ACE-O" => -0.5679,
         "ALA-C" => 0.6163, "ALA-CA" => 0.0962, "ALA-CB" => -0.0597, "ALA-H1" => 0.1997, "ALA-H2" => 0.1997, "ALA-H3" => 0.1997, "ALA-HA" => 0.0889, "ALA-HB1" => 0.03, "ALA-HB2" => 0.03, "ALA-HB3" => 0.03, "ALA-N" => 0.1414, "ALA-O" => -0.5722,
@@ -246,9 +250,13 @@ pub struct PYDOCKDockingModel {
 }
 
 impl<'a> PYDOCKDockingModel {
-
-    fn new(structure: &'a PDB, active_restraints: &'a [String], passive_restraints: &'a [String],
-        nmodes: &[f64], num_anm: usize) -> PYDOCKDockingModel {
+    fn new(
+        structure: &'a PDB,
+        active_restraints: &'a [String],
+        passive_restraints: &'a [String],
+        nmodes: &[f64],
+        num_anm: usize,
+    ) -> PYDOCKDockingModel {
         let mut model = PYDOCKDockingModel {
             atoms: Vec::new(),
             coordinates: Vec::new(),
@@ -285,10 +293,12 @@ impl<'a> PYDOCKDockingModel {
                         match model.active_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
-                            },
+                            }
                             None => {
-                                model.active_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
-                            },
+                                model
+                                    .active_restraints
+                                    .insert(res_id.to_string(), vec![atom_index as usize]);
+                            }
                         }
                     }
 
@@ -296,10 +306,12 @@ impl<'a> PYDOCKDockingModel {
                         match model.passive_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
-                            },
+                            }
                             None => {
-                                model.passive_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
-                            },
+                                model
+                                    .passive_restraints
+                                    .insert(res_id.to_string(), vec![atom_index as usize]);
+                            }
                         }
                     }
 
@@ -317,7 +329,10 @@ impl<'a> PYDOCKDockingModel {
                                     _ => panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id),
                                 }
                             } else {
-                                warn!("PYDOCK Warning: Atom [{:?}] not supported, trying generic", atom_id);
+                                warn!(
+                                    "PYDOCK Warning: Atom [{:?}] not supported, trying generic",
+                                    atom_id
+                                );
                                 let atom_element = match atom_name.chars().nth(0) {
                                     Some(element) => element,
                                     _ => panic!("PYDOCK Error: Atom element could not be guessed from [{:?}]", atom_name),
@@ -328,18 +343,19 @@ impl<'a> PYDOCKDockingModel {
                                     _ => panic!("PYDOCK Error: Atom [{:?}] not supported", atom_id),
                                 }
                             }
-                        },
+                        }
                     };
 
                     // Assign electrostatics charge
                     let ele_charge = match ELE_CHARGES.get(&*atom_id) {
                         Some(&charge) => charge,
-                        _ => {
-                            match NT_ELE_CHARGES.get(&*atom_id) {
-                                Some(&charge) => charge,
-                                _ => panic!("PYDOCK Error: Atom [{:?}] electrostatics charge not found", atom_id),
-                            }
-                        }
+                        _ => match NT_ELE_CHARGES.get(&*atom_id) {
+                            Some(&charge) => charge,
+                            _ => panic!(
+                                "PYDOCK Error: Atom [{:?}] electrostatics charge not found",
+                                atom_id
+                            ),
+                        },
                     };
                     model.ele_charges.push(ele_charge);
 
@@ -371,16 +387,35 @@ pub struct PYDOCK {
     pub use_anm: bool,
 }
 
-
 impl<'a> PYDOCK {
-
-    pub fn new(receptor: PDB, rec_active_restraints: Vec<String>, rec_passive_restraints: Vec<String>,
-            rec_nmodes: Vec<f64>, rec_num_anm: usize,
-            ligand: PDB, lig_active_restraints: Vec<String>, lig_passive_restraints: Vec<String>,
-            lig_nmodes: Vec<f64>, lig_num_anm: usize, use_anm: bool) -> Box<dyn Score + 'a> {
+    pub fn new(
+        receptor: PDB,
+        rec_active_restraints: Vec<String>,
+        rec_passive_restraints: Vec<String>,
+        rec_nmodes: Vec<f64>,
+        rec_num_anm: usize,
+        ligand: PDB,
+        lig_active_restraints: Vec<String>,
+        lig_passive_restraints: Vec<String>,
+        lig_nmodes: Vec<f64>,
+        lig_num_anm: usize,
+        use_anm: bool,
+    ) -> Box<dyn Score + 'a> {
         let d = PYDOCK {
-            receptor: PYDOCKDockingModel::new(&receptor, &rec_active_restraints, &rec_passive_restraints, &rec_nmodes, rec_num_anm),
-            ligand: PYDOCKDockingModel::new(&ligand, &lig_active_restraints, &lig_passive_restraints, &lig_nmodes, lig_num_anm),
+            receptor: PYDOCKDockingModel::new(
+                &receptor,
+                &rec_active_restraints,
+                &rec_passive_restraints,
+                &rec_nmodes,
+                rec_num_anm,
+            ),
+            ligand: PYDOCKDockingModel::new(
+                &ligand,
+                &lig_active_restraints,
+                &lig_passive_restraints,
+                &lig_nmodes,
+                lig_num_anm,
+            ),
             use_anm,
         };
         Box::new(d)
@@ -388,10 +423,13 @@ impl<'a> PYDOCK {
 }
 
 impl Score for PYDOCK {
-
-    fn energy(&self, translation: &[f64], rotation: &Quaternion,
-        rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
-
+    fn energy(
+        &self,
+        translation: &[f64],
+        rotation: &Quaternion,
+        rec_nmodes: &[f64],
+        lig_nmodes: &[f64],
+    ) -> f64 {
         // Clone receptor coordinates
         let mut receptor_coordinates: Vec<[f64; 3]> = self.receptor.coordinates.clone();
         let rec_num_atoms = receptor_coordinates.len();
@@ -412,9 +450,12 @@ impl Score for PYDOCK {
                 for i_nm in 0usize..self.ligand.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
                     // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                    coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3] * lig_nmodes[i_nm];
-                    coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1] * lig_nmodes[i_nm];
-                    coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2] * lig_nmodes[i_nm];
+                    coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3]
+                        * lig_nmodes[i_nm];
+                    coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1]
+                        * lig_nmodes[i_nm];
+                    coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2]
+                        * lig_nmodes[i_nm];
                 }
             }
         }
@@ -425,9 +466,14 @@ impl Score for PYDOCK {
                 for i_nm in 0usize..self.receptor.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
                     // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                    coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3] * rec_nmodes[i_nm];
-                    coordinate[1] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 1] * rec_nmodes[i_nm];
-                    coordinate[2] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 2] * rec_nmodes[i_nm];
+                    coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3]
+                        * rec_nmodes[i_nm];
+                    coordinate[1] += self.receptor.nmodes
+                        [i_nm * rec_num_atoms * 3 + i_atom * 3 + 1]
+                        * rec_nmodes[i_nm];
+                    coordinate[2] += self.receptor.nmodes
+                        [i_nm * rec_num_atoms * 3 + i_atom * 3 + 2]
+                        * rec_nmodes[i_nm];
                 }
             }
         }
@@ -442,11 +488,14 @@ impl Score for PYDOCK {
             let y1 = ra[1];
             let z1 = ra[2];
             for (j, la) in ligand_coordinates.iter().enumerate() {
-                let distance2 = (x1-la[0])*(x1-la[0]) + (y1-la[1])*(y1-la[1]) + (z1-la[2])*(z1-la[2]);
+                let distance2 = (x1 - la[0]) * (x1 - la[0])
+                    + (y1 - la[1]) * (y1 - la[1])
+                    + (z1 - la[2]) * (z1 - la[2]);
 
                 // Electrostatics energy
                 if distance2 <= ELEC_DIST_CUTOFF2 {
-                    let mut atom_elec = self.receptor.ele_charges[i] * self.ligand.ele_charges[j] / distance2;
+                    let mut atom_elec =
+                        self.receptor.ele_charges[i] * self.ligand.ele_charges[j] / distance2;
                     if atom_elec > ELEC_MAX_CUTOFF {
                         atom_elec = ELEC_MAX_CUTOFF;
                     }
@@ -458,10 +507,11 @@ impl Score for PYDOCK {
 
                 // Van der Waals energy
                 if distance2 <= VDW_DIST_CUTOFF2 {
-                    let vdw_energy = (self.receptor.vdw_charges[i] * self.ligand.vdw_charges[j]).sqrt();
+                    let vdw_energy =
+                        (self.receptor.vdw_charges[i] * self.ligand.vdw_charges[j]).sqrt();
                     let vdw_radius = self.receptor.vdw_radii[i] + self.ligand.vdw_radii[j];
                     let p6 = vdw_radius.powi(6) / distance2.powi(3);
-                    let mut k = vdw_energy * (p6*p6 - 2.0 * p6);
+                    let mut k = vdw_energy * (p6 * p6 - 2.0 * p6);
                     if k > VDW_CUTOFF {
                         k = VDW_CUTOFF;
                     }
@@ -479,10 +529,10 @@ impl Score for PYDOCK {
         let score = (total_elec + total_vdw) * -1.0;
 
         // Bias the scoring depending on satisfied restraints
-        let perc_receptor_restraints: f64 = satisfied_restraints(&interface_receptor,
-            &self.receptor.active_restraints);
-        let perc_ligand_restraints: f64 = satisfied_restraints(&interface_ligand,
-            &self.ligand.active_restraints);
+        let perc_receptor_restraints: f64 =
+            satisfied_restraints(&interface_receptor, &self.receptor.active_restraints);
+        let perc_ligand_restraints: f64 =
+            satisfied_restraints(&interface_ligand, &self.ligand.active_restraints);
         // Take into account membrane intersection
         let mut membrane_penalty: f64 = 0.0;
         let intersection = membrane_intersection(&interface_receptor, &self.receptor.membrane);
@@ -497,8 +547,8 @@ impl Score for PYDOCK {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
     use crate::qt::Quaternion;
+    use std::env;
 
     #[test]
     fn test_1azp() {
@@ -509,12 +559,26 @@ mod tests {
         let test_path: String = format!("{}/tests/1azp", cargo_path);
 
         let receptor_filename: String = format!("{}/1azp_receptor.pdb", test_path);
-        let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
+        let (receptor, _errors) =
+            pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
         let ligand_filename: String = format!("{}/1azp_ligand.pdb", test_path);
-        let (ligand, _errors) = pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
+        let (ligand, _errors) =
+            pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
-        let scoring = PYDOCK::new(receptor, Vec::new(), Vec::new(), Vec::new(), 0, ligand, Vec::new(), Vec::new(), Vec::new(), 0, false);
+        let scoring = PYDOCK::new(
+            receptor,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            0,
+            ligand,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            0,
+            false,
+        );
 
         let translation = vec![0., 0., 0.];
         let rotation = Quaternion::default();
@@ -522,4 +586,3 @@ mod tests {
         assert_eq!(energy, -364.88126358158974);
     }
 }
-

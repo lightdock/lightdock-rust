@@ -1,11 +1,11 @@
+use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
+use super::qt::Quaternion;
+use super::scoring::{membrane_intersection, satisfied_restraints, Score};
+use pdbtbx::PDB;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
 use std::io::Read;
-use std::env;
-use pdbtbx::PDB;
-use super::qt::Quaternion;
-use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
-use super::scoring::{Score, satisfied_restraints, membrane_intersection};
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
@@ -17,36 +17,40 @@ macro_rules! hashmap {
 
 pub fn r3_to_numerical(residue_name: &str) -> usize {
     match residue_name {
-        "ALA" => {0}
-        "CYS" => {1}
-        "ASP" => {2}
-        "GLU" => {3}
-        "PHE" => {4}
-        "GLY" => {5}
-        "HIS" => {6}
-        "ILE" => {7}
-        "LYS" => {8}
-        "LEU" => {9}
-        "MET" => {10}
-        "ASN" => {11}
-        "PRO" => {12}
-        "GLN" => {13}
-        "ARG" => {14}
-        "SER" => {15}
-        "THR" => {16}
-        "VAL" => {17}
-        "TRP" => {18}
-        "TYR" => {19}
-        "MMB" => {20}
-        "MMY" => {0}
-        _ => { panic!("Residue name not supported in DFIRE scoring function") }
+        "ALA" => 0,
+        "CYS" => 1,
+        "ASP" => 2,
+        "GLU" => 3,
+        "PHE" => 4,
+        "GLY" => 5,
+        "HIS" => 6,
+        "ILE" => 7,
+        "LYS" => 8,
+        "LEU" => 9,
+        "MET" => 10,
+        "ASN" => 11,
+        "PRO" => 12,
+        "GLN" => 13,
+        "ARG" => 14,
+        "SER" => 15,
+        "THR" => 16,
+        "VAL" => 17,
+        "TRP" => 18,
+        "TYR" => 19,
+        "MMB" => 20,
+        "MMY" => 0,
+        _ => {
+            panic!("Residue name not supported in DFIRE scoring function")
+        }
     }
 }
 
 // DFIRE only uses 20 distance bins
-const DIST_TO_BINS: &[usize] = &[1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 15,
-                                 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
-                                 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 32];
+const DIST_TO_BINS: &[usize] = &[
+    1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19,
+    19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31,
+    32,
+];
 
 lazy_static! {
     static ref ATOMNUMBER: HashMap<&'static str, usize> = hashmap![
@@ -97,7 +101,6 @@ lazy_static! {
                                                vec![74, 75, 76, 77, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
 }
 
-
 pub struct DFIREDockingModel {
     pub atoms: Vec<usize>,
     pub coordinates: Vec<[f64; 3]>,
@@ -109,9 +112,13 @@ pub struct DFIREDockingModel {
 }
 
 impl<'a> DFIREDockingModel {
-
-    fn new(structure: &'a PDB, active_restraints: &'a [String], passive_restraints: &'a [String],
-        nmodes: &[f64], num_anm: usize) -> DFIREDockingModel {
+    fn new(
+        structure: &'a PDB,
+        active_restraints: &'a [String],
+        passive_restraints: &'a [String],
+        nmodes: &[f64],
+        num_anm: usize,
+    ) -> DFIREDockingModel {
         let mut model = DFIREDockingModel {
             atoms: Vec::new(),
             coordinates: Vec::new(),
@@ -145,10 +152,12 @@ impl<'a> DFIREDockingModel {
                         match model.active_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
-                            },
+                            }
                             None => {
-                                model.active_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
-                            },
+                                model
+                                    .active_restraints
+                                    .insert(res_id.to_string(), vec![atom_index as usize]);
+                            }
                         }
                     }
 
@@ -156,10 +165,12 @@ impl<'a> DFIREDockingModel {
                         match model.passive_restraints.get_mut(&res_id) {
                             Some(atom_indexes) => {
                                 atom_indexes.push(atom_index as usize);
-                            },
+                            }
                             None => {
-                                model.passive_restraints.insert(res_id.to_string(), vec![atom_index as usize]);
-                            },
+                                model
+                                    .passive_restraints
+                                    .insert(res_id.to_string(), vec![atom_index as usize]);
+                            }
                         }
                     }
 
@@ -180,23 +191,42 @@ impl<'a> DFIREDockingModel {
 }
 
 pub struct DFIRE {
-	pub potential: Vec<f64>,
+    pub potential: Vec<f64>,
     pub receptor: DFIREDockingModel,
     pub ligand: DFIREDockingModel,
     pub use_anm: bool,
 }
 
-
 impl<'a> DFIRE {
-
-    pub fn new(receptor: PDB, rec_active_restraints: Vec<String>, rec_passive_restraints: Vec<String>,
-            rec_nmodes: Vec<f64>, rec_num_anm: usize,
-            ligand: PDB, lig_active_restraints: Vec<String>, lig_passive_restraints: Vec<String>,
-            lig_nmodes: Vec<f64>, lig_num_anm: usize, use_anm: bool) -> Box<dyn Score + 'a> {
+    pub fn new(
+        receptor: PDB,
+        rec_active_restraints: Vec<String>,
+        rec_passive_restraints: Vec<String>,
+        rec_nmodes: Vec<f64>,
+        rec_num_anm: usize,
+        ligand: PDB,
+        lig_active_restraints: Vec<String>,
+        lig_passive_restraints: Vec<String>,
+        lig_nmodes: Vec<f64>,
+        lig_num_anm: usize,
+        use_anm: bool,
+    ) -> Box<dyn Score + 'a> {
         let mut d = DFIRE {
             potential: Vec::with_capacity(169 * 169 * 20),
-            receptor: DFIREDockingModel::new(&receptor, &rec_active_restraints, &rec_passive_restraints, &rec_nmodes, rec_num_anm),
-            ligand: DFIREDockingModel::new(&ligand, &lig_active_restraints, &lig_passive_restraints, &lig_nmodes, lig_num_anm),
+            receptor: DFIREDockingModel::new(
+                &receptor,
+                &rec_active_restraints,
+                &rec_passive_restraints,
+                &rec_nmodes,
+                rec_num_anm,
+            ),
+            ligand: DFIREDockingModel::new(
+                &ligand,
+                &lig_active_restraints,
+                &lig_passive_restraints,
+                &lig_nmodes,
+                lig_num_anm,
+            ),
             use_anm,
         };
         d.load_potentials();
@@ -213,13 +243,15 @@ impl<'a> DFIRE {
 
         let parameters_path: String = format!("{}/DCparams", data_folder);
 
-        File::open(parameters_path).expect("Unable to open DFIRE parameters")
-            .read_to_string(&mut raw_parameters).expect("Unable to read DFIRE parameters");
+        File::open(parameters_path)
+            .expect("Unable to open DFIRE parameters")
+            .read_to_string(&mut raw_parameters)
+            .expect("Unable to read DFIRE parameters");
 
         let split = raw_parameters.lines();
         let params: Vec<&str> = split.collect();
 
-        for param in params.iter().take(169*169*20) {
+        for param in params.iter().take(169 * 169 * 20) {
             self.potential.push(param.trim().parse::<f64>().unwrap());
         }
     }
@@ -230,9 +262,13 @@ impl<'a> DFIRE {
 }
 
 impl Score for DFIRE {
-
-    fn energy(&self, translation: &[f64], rotation: &Quaternion,
-        rec_nmodes: &[f64], lig_nmodes: &[f64]) -> f64 {
+    fn energy(
+        &self,
+        translation: &[f64],
+        rotation: &Quaternion,
+        rec_nmodes: &[f64],
+        lig_nmodes: &[f64],
+    ) -> f64 {
         let mut score: f64 = 0.0;
 
         // Clone receptor coordinates
@@ -255,9 +291,12 @@ impl Score for DFIRE {
                 for i_nm in 0usize..self.ligand.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
                     // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                    coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3] * lig_nmodes[i_nm];
-                    coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1] * lig_nmodes[i_nm];
-                    coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2] * lig_nmodes[i_nm];
+                    coordinate[0] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3]
+                        * lig_nmodes[i_nm];
+                    coordinate[1] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 1]
+                        * lig_nmodes[i_nm];
+                    coordinate[2] += self.ligand.nmodes[i_nm * lig_num_atoms * 3 + i_atom * 3 + 2]
+                        * lig_nmodes[i_nm];
                 }
             }
         }
@@ -268,9 +307,14 @@ impl Score for DFIRE {
                 for i_nm in 0usize..self.receptor.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
                     // Endianness: i = i_nm * num_atoms * 3 + i_atom * 3 + coord
-                    coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3] * rec_nmodes[i_nm];
-                    coordinate[1] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 1] * rec_nmodes[i_nm];
-                    coordinate[2] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3 + 2] * rec_nmodes[i_nm];
+                    coordinate[0] += self.receptor.nmodes[i_nm * rec_num_atoms * 3 + i_atom * 3]
+                        * rec_nmodes[i_nm];
+                    coordinate[1] += self.receptor.nmodes
+                        [i_nm * rec_num_atoms * 3 + i_atom * 3 + 1]
+                        * rec_nmodes[i_nm];
+                    coordinate[2] += self.receptor.nmodes
+                        [i_nm * rec_num_atoms * 3 + i_atom * 3 + 2]
+                        * rec_nmodes[i_nm];
                 }
             }
         }
@@ -284,12 +328,14 @@ impl Score for DFIRE {
             let z1 = ra[2];
             let atoma = self.receptor.atoms[i];
             for (j, la) in ligand_coordinates.iter().enumerate() {
-                let dist = (x1-la[0])*(x1-la[0]) + (y1-la[1])*(y1-la[1]) + (z1-la[2])*(z1-la[2]);
+                let dist = (x1 - la[0]) * (x1 - la[0])
+                    + (y1 - la[1]) * (y1 - la[1])
+                    + (z1 - la[2]) * (z1 - la[2]);
                 if dist <= 225. {
                     let atomb = self.ligand.atoms[j];
-                    let d = dist.sqrt()*2.0 - 1.0;
+                    let d = dist.sqrt() * 2.0 - 1.0;
                     let dfire_bin = DIST_TO_BINS[d as usize] - 1;
-                    score += self.potential[atoma*169*20 + atomb*20 + dfire_bin];
+                    score += self.potential[atoma * 169 * 20 + atomb * 20 + dfire_bin];
                     if d <= INTERFACE_CUTOFF {
                         interface_receptor[i] = 1;
                         interface_ligand[j] = 1;
@@ -301,10 +347,10 @@ impl Score for DFIRE {
         score = (score * 0.0157 - 4.7) * -1.0;
 
         // Bias the scoring depending on satisfied restraints
-        let perc_receptor_restraints: f64 = satisfied_restraints(&interface_receptor,
-            &self.receptor.active_restraints);
-        let perc_ligand_restraints: f64 = satisfied_restraints(&interface_ligand,
-            &self.ligand.active_restraints);
+        let perc_receptor_restraints: f64 =
+            satisfied_restraints(&interface_receptor, &self.receptor.active_restraints);
+        let perc_ligand_restraints: f64 =
+            satisfied_restraints(&interface_ligand, &self.ligand.active_restraints);
         // Take into account membrane intersection
         let mut membrane_penalty: f64 = 0.0;
         let intersection = membrane_intersection(&interface_receptor, &self.receptor.membrane);
@@ -342,13 +388,26 @@ mod tests {
         let test_path: String = format!("{}/tests/2oob", cargo_path);
 
         let receptor_filename: String = format!("{}/2oob_receptor.pdb", test_path);
-        let (receptor, _errors) = pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
+        let (receptor, _errors) =
+            pdbtbx::open(&receptor_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
         let ligand_filename: String = format!("{}/2oob_ligand.pdb", test_path);
-        let (ligand, _errors) = pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
+        let (ligand, _errors) =
+            pdbtbx::open(&ligand_filename, pdbtbx::StrictnessLevel::Strict).unwrap();
 
-        let scoring = DFIRE::new(receptor, Vec::new(), Vec::new(), Vec::new(), 0,
-                                 ligand, Vec::new(), Vec::new(), Vec::new(), 0, false);
+        let scoring = DFIRE::new(
+            receptor,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            0,
+            ligand,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            0,
+            false,
+        );
 
         let translation = vec![0., 0., 0.];
         let rotation = Quaternion::default();
