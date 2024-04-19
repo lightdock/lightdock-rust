@@ -1,6 +1,6 @@
 [package]
 name = "lightdock"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Brian Jimenez Garcia <br.jimenezgarcia@gmail.com>"]
 edition = "2021"
 license = "GPL-3.0-only"
