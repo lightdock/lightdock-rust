@@ -139,7 +139,7 @@ fn run() {
             );
         }
         _ => {
-            println!(
+            eprintln!(
                 "Wrong command line. Usage: {} setup_filename swarm_filename steps method",
                 args[0]
             );
@@ -177,7 +177,11 @@ fn simulate(
         .map(|m| m.is_dir())
         .unwrap_or(false)
     {
-        panic!("Output directory does not exist for swarm {:?}", swarm_id);
+        eprintln!(
+            "Output directory does not exist for swarm {:?}, creating it",
+            swarm_id
+        );
+        fs::create_dir(&swarm_directory).expect("Error creating directory");
     }
 
     println!("Writing to swarm dir {:?}", swarm_directory);
