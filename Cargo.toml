@@ -1,8 +1,11 @@
 [package]
 name = "lightdock"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Brian Jimenez Garcia <br.jimenezgarcia@gmail.com>"]
 edition = "2021"
+license = "GPL-3.0-only"
+description = "Macromolecular docking software based on the GSO algorithm"
+homepage = "https://lightdock.org"
 
 [dependencies]
 rand = "0.7.3"
@@ -13,3 +16,9 @@ lazy_static = "1.4.0"
 npyz = "0.8.3"
 log = "0.4.21"
 env_logger = "0.11.3"
+
+[lints.clippy]
+borrowed_box = "allow"
+needless_range_loop = "allow"
+too_many_arguments = "allow"
+new_ret_no_self = "allow"
