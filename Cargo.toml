@@ -6,6 +6,7 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Macromolecular docking software based on the GSO algorithm"
 homepage = "https://lightdock.org"
+repository = "https://github.com/lightdock/lightdock-rust"
 
 [dependencies]
 rand = "0.7.3"
