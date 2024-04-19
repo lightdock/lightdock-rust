@@ -115,7 +115,17 @@ fn run() {
             };
 
             // Load setup
-            let setup = read_setup_from_file(setup_filename).unwrap();
+            let setup = match read_setup_from_file(setup_filename) {
+                Ok(setup) => setup,
+                Err(e) => {
+                    eprintln!(
+                        "Error reading setup file [{:?}]: {:?}",
+                        setup_filename,
+                        e.to_string()
+                    );
+                    return;
+                }
+            };
 
             // Simulation path
             let simulation_path = Path::new(setup_filename).parent().unwrap();
