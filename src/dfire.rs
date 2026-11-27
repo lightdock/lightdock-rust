@@ -1,4 +1,4 @@
-use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
+use super::constants::{INTERFACE_CUTOFF2, MEMBRANE_PENALTY_SCORE};
 use super::qt::Quaternion;
 use super::scoring::{membrane_intersection, satisfied_restraints, Score};
 use pdbtbx::PDB;
@@ -336,7 +336,7 @@ impl Score for DFIRE {
                     let d = dist.sqrt() * 2.0 - 1.0;
                     let dfire_bin = DIST_TO_BINS[d as usize] - 1;
                     score += self.potential[atoma * 169 * 20 + atomb * 20 + dfire_bin];
-                    if d <= INTERFACE_CUTOFF {
+                    if dist <= INTERFACE_CUTOFF2 {
                         interface_receptor[i] = 1;
                         interface_ligand[j] = 1;
                     }
