@@ -1,4 +1,4 @@
-//! Tests for the interface calculated by the scoring functions
+//! Tests for the ligand pose and the interface calculated by the scoring functions
 use lightdock::dfire::DFIRE;
 use lightdock::dna::DNA;
 use lightdock::pydock::PYDOCK;
@@ -20,6 +20,40 @@ fn single_atom(name: &str, chain: char) -> String {
     );
     fs::write(&path, line).unwrap();
     path
+}
+
+/// A ligand mode shifting every atom 2 A along x, under a 180 degrees rotation around z,
+/// must move the ligand 2 A towards -x
+macro_rules! anm_rotates_with_ligand {
+    ($name:ident, $function:ident, $receptor:expr, $ligand:expr) => {
+        #[test]
+        fn $name() {
+            let mode: Vec<f64> = (0..open($ligand).atom_count())
+                .flat_map(|_| vec![2.0, 0.0, 0.0])
+                .collect();
+            let build = |modes: Vec<f64>, num_anm: usize| {
+                $function::new(
+                    open($receptor),
+                    vec![],
+                    vec![],
+                    vec![],
+                    0,
+                    open($ligand),
+                    vec![],
+                    vec![],
+                    modes,
+                    num_anm,
+                    num_anm > 0,
+                )
+            };
+            let rotation = Quaternion::new(0.0, 0.0, 0.0, 1.0);
+
+            let flexible = build(mode, 1).energy(&[0.0, 0.0, 0.0], &rotation, &[], &[1.0]);
+            let expected = build(vec![], 0).energy(&[-2.0, 0.0, 0.0], &rotation, &[], &[]);
+
+            assert!((flexible - expected).abs() < 1e-8);
+        }
+    };
 }
 
 /// Restraints on both partners triple the score only if their atoms are in contact
@@ -72,6 +106,25 @@ macro_rules! contact_cutoff {
         }
     };
 }
+
+anm_rotates_with_ligand!(
+    dfire_anm_rotates_with_ligand,
+    DFIRE,
+    "tests/2oob/2oob_receptor.pdb",
+    "tests/2oob/2oob_ligand.pdb"
+);
+anm_rotates_with_ligand!(
+    dna_anm_rotates_with_ligand,
+    DNA,
+    "tests/1azp/1azp_receptor.pdb",
+    "tests/1azp/1azp_ligand.pdb"
+);
+anm_rotates_with_ligand!(
+    pydock_anm_rotates_with_ligand,
+    PYDOCK,
+    "tests/1azp/1azp_receptor.pdb",
+    "tests/1azp/1azp_ligand.pdb"
+);
 
 contact_cutoff!(dfire_contact_cutoff, DFIRE);
 contact_cutoff!(dna_contact_cutoff, DNA);

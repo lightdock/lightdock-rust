@@ -280,13 +280,7 @@ impl Score for DFIRE {
 
         // Get the proper ligand pose
         for (i_atom, coordinate) in ligand_coordinates.iter_mut().enumerate() {
-            // First rotate
-            let rotated_coordinate = rotation.rotate(coordinate.to_vec());
-            // Then tranlate
-            coordinate[0] = rotated_coordinate[0] + translation[0];
-            coordinate[1] = rotated_coordinate[1] + translation[1];
-            coordinate[2] = rotated_coordinate[2] + translation[2];
-            // ANM
+            // ANM is applied first, as normal modes are in the original ligand frame
             if self.use_anm && self.ligand.num_anm > 0 {
                 for i_nm in 0usize..self.ligand.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
@@ -299,6 +293,12 @@ impl Score for DFIRE {
                         * lig_nmodes[i_nm];
                 }
             }
+            // First rotate
+            let rotated_coordinate = rotation.rotate(coordinate.to_vec());
+            // Then translate
+            coordinate[0] = rotated_coordinate[0] + translation[0];
+            coordinate[1] = rotated_coordinate[1] + translation[1];
+            coordinate[2] = rotated_coordinate[2] + translation[2];
         }
         // Receptor only needs to use ANM
         for (i_atom, coordinate) in receptor_coordinates.iter_mut().enumerate() {
