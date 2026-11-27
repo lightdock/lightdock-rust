@@ -1,4 +1,4 @@
-use super::constants::{INTERFACE_CUTOFF, MEMBRANE_PENALTY_SCORE};
+use super::constants::{INTERFACE_CUTOFF2, MEMBRANE_PENALTY_SCORE};
 use super::qt::Quaternion;
 use super::scoring::{membrane_intersection, satisfied_restraints, Score};
 use pdbtbx::PDB;
@@ -280,13 +280,7 @@ impl Score for DFIRE {
 
         // Get the proper ligand pose
         for (i_atom, coordinate) in ligand_coordinates.iter_mut().enumerate() {
-            // First rotate
-            let rotated_coordinate = rotation.rotate(coordinate.to_vec());
-            // Then tranlate
-            coordinate[0] = rotated_coordinate[0] + translation[0];
-            coordinate[1] = rotated_coordinate[1] + translation[1];
-            coordinate[2] = rotated_coordinate[2] + translation[2];
-            // ANM
+            // ANM is applied first, as normal modes are in the original ligand frame
             if self.use_anm && self.ligand.num_anm > 0 {
                 for i_nm in 0usize..self.ligand.num_anm {
                     // (num_anm, num_atoms, 3) -> 1d
@@ -299,6 +293,12 @@ impl Score for DFIRE {
                         * lig_nmodes[i_nm];
                 }
             }
+            // First rotate
+            let rotated_coordinate = rotation.rotate(coordinate.to_vec());
+            // Then translate
+            coordinate[0] = rotated_coordinate[0] + translation[0];
+            coordinate[1] = rotated_coordinate[1] + translation[1];
+            coordinate[2] = rotated_coordinate[2] + translation[2];
         }
         // Receptor only needs to use ANM
         for (i_atom, coordinate) in receptor_coordinates.iter_mut().enumerate() {
@@ -336,7 +336,7 @@ impl Score for DFIRE {
                     let d = dist.sqrt() * 2.0 - 1.0;
                     let dfire_bin = DIST_TO_BINS[d as usize] - 1;
                     score += self.potential[atoma * 169 * 20 + atomb * 20 + dfire_bin];
-                    if d <= INTERFACE_CUTOFF {
+                    if dist <= INTERFACE_CUTOFF2 {
                         interface_receptor[i] = 1;
                         interface_ligand[j] = 1;
                     }

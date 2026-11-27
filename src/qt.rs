@@ -1,6 +1,5 @@
 use super::constants::LINEAR_THRESHOLD;
 use rand::Rng;
-use std::f64;
 use std::f64::consts::PI;
 use std::ops;
 
